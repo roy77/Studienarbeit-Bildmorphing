@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Morphing Demonstrator</title>
+</head>
+<body>
+
+<div> 
+    <!--Canvas-Elemente-->  
+    <canvas id="canvas_1"  style="border:2px solid #000000;"></canvas>   
+    <canvas id="canvas_2"  style="border:2px solid #000000;"></canvas> 
+    <canvas id="canvas_3"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_4"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_5"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_6"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_7"  style="border:2px solid #000000;"></canvas>   
+</div>
+
+<button type="button1" id="btn1" onclick="ButtonTransformation()">Morphing starten</button>
+
+<!-- JavaScript-Dateien einbinden-->
+<script src="opencv.js" type="text/javascript"></script>
+<script src="Image_Morphing.js" ></script>
+
+<script>
+    //BildBoxen erstellen
+    let BildBox1= new BildBox();
+    let BildBox2= new BildBox();
+    //BildBoxen initialisieren
+    BildBox1.init('canvas_1','Thomas_1_zugeschnitten.png');
+    BildBox2.init('canvas_2','Viktor_1_zugeschnitten.png');
+
+    //Morphing1 erstellen und initialisieren
+    let Morphing1=(new Morphing()).init('canvas_3','canvas_4','canvas_5');
+
+    //Uebergabe-Event auffangen und Daten an Morphing1 übergeben
+    addEventListener('Uebergabe', function (e) 
+    {
+        let info=e.detail;
+        Morphing1.uebertragen(info.sender, info.Punkte, info.Bild, info.teilverhältnis);
+
+    }, false);
+
+    //Buttonfunktion
+    function ButtonTransformation()
+    {   
+        //Funktion von Morphing1 für das Morphen aufrufen
+        Morphing1.transformiereAusschnitte(Morphing1.Punkte1, Morphing1.Punkte2, Morphing1.Bild1, Morphing1.Bild2);
+        Morphing1.addiereAusschnitte(Morphing1.Bild2, Morphing1.ZielCanvas1, Morphing1.Ziel_ctx1);
+        Morphing1.transformiereAusschnitte(Morphing1.Punkte2, Morphing1.Punkte1, Morphing1.Bild2, Morphing1.Bild1);
+        Morphing1.addiereAusschnitte(Morphing1.Bild1, Morphing1.ZielCanvas2, Morphing1.Ziel_ctx2);
+        
+        let canvas = document.getElementById('canvas_6');
+        let ctx = canvas.getContext('2d');
+        let src1 = cv.imread(Morphing1.Bild1);
+        let src2 = cv.imread('canvas_5');
+        let src3 = cv.imread(Morphing1.Bild2);
+        let src4 = cv.imread('canvas_4')
+        let dst1 = new cv.Mat();
+        let dst2 = new cv.Mat();
+        
+        //Ergebnisbilder erstellen durch gewichtete Addition 
+        cv.addWeighted(src1, 0.5, src2, 0.5, 0, dst1);
+        cv.addWeighted(src3, 0.5, src4, 0.5, 0, dst2);
+        cv.imshow('canvas_6',dst1);
+        cv.imshow('canvas_7',dst2);
+    }
+
+</script>
+           
+</body>
+</html>
