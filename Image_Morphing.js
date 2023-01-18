@@ -26,7 +26,8 @@ class Punkt{
     }
 }
 
-class BildBox{
+class BildBox
+{
     constructor()
     {
         this.bild = new Image();
@@ -103,7 +104,7 @@ class BildBox{
         this.startX = this.canvasX;
         this.startY = this.canvasY;
         for(let i=1; i < this.Punkte.length; i++)
-        {   
+        {   if (i != 1 && i != 5 && i != 21 && i != 25)
             this.Punkte[i].angewählt(this.canvasX,this.canvasY);
         }
 
@@ -198,6 +199,8 @@ class BildBox{
         {
             if(this.Punkte[i].nummer % (this.teilverhältnis+1) != 0 )
             {
+                this.ctx.strokeStyle = 'black';
+                this.ctx.lineWidth = 0;
                 this.ctx.moveTo(this.Punkte[i].x, this.Punkte[i].y)
                 this.ctx.lineTo(this.Punkte[i+1].x, this.Punkte[i+1].y);
                 this.ctx.stroke();
@@ -211,6 +214,35 @@ class BildBox{
                 this.ctx.lineTo(this.Punkte[i+this.teilverhältnis+1].x, this.Punkte[i+this.teilverhältnis+1].y);
                 this.ctx.stroke();
             }
+        }
+
+        this.k = 0;
+        //diagonal
+        for(let i=1; i<20; i++)
+        {
+            switch (i)
+            {
+                case 5:
+                    this.k++;
+                    break;
+                case 10:
+                    this.k++;
+                    break;
+        
+                case 15:
+                    this.k++;
+                    break;
+                default:
+                    this.k++;
+                    {
+                        this.ctx.moveTo(this.Punkte[this.k].x, this.Punkte[this.k].y)
+                        this.ctx.lineTo(this.Punkte[this.k+this.teilverhältnis+2].x, this.Punkte[this.k+this.teilverhältnis+2].y);
+                        this.ctx.stroke();
+                    }
+                    break;
+            }
+            
+
         }
     }
 
@@ -250,7 +282,7 @@ class BildBox{
     {
         //Dieser Canvas wird nur verwendet für die Segmente, kann ausgeblendet werden
         this.canvas = document.getElementById(canvasID);
-        this.canvas.style.display="none";
+        this.canvas.style.display="none";  
         this.ctx = this.canvas.getContext('2d');
         this.ctx.font = "16px Arial";
 
@@ -285,8 +317,11 @@ class BildBox{
 
     transformiereAusschnitte(Quellraster, Zielraster, Quellbild, Zielbild)
     {  
+        this.z1 = 0;
+        this.z2 = 16;
+        //obere Dreiecke
         this.j = 0;
-        for(let z=1; z<=Math.pow(this.teilverhältnis,2); z++)
+        for(let z=1; z<=16; z++)  //z<=Math.pow(this.teilverhältnis,2)
         {   //später noch an das Teilverhältnis anpassen
             switch (z)
             {
@@ -300,33 +335,79 @@ class BildBox{
                 case 13:
                     this.j+=2;
                     break;
+
                 default:
                     this.j++;
             }
+        this.z1 ++;
             
         //Vierpunkttransformation
         let src = cv.imread(Quellbild); //direkt das Bild laden
         let dst = new cv.Mat();         //Matrix für das Ziel erstellen
-
         //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
-        let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [Quellraster[this.j].x, Quellraster[this.j].y, Quellraster[this.j+1].x, Quellraster[this.j+1].y, Quellraster[this.j+5].x, Quellraster[this.j+5].y, Quellraster[this.j+6].x, Quellraster[this.j+6].y]);
-        let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j+5].x, Zielraster[this.j+5].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y]);
+        let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellraster[this.j].x, Quellraster[this.j].y, Quellraster[this.j+1].x, Quellraster[this.j+1].y, Quellraster[this.j+6].x, Quellraster[this.j+6].y]);
+        let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y]);
         //Transformationsmatrix berechnen
-        let kernel = cv.getPerspectiveTransform(srcTri, dstTri);
+        let kernel = cv.getAffineTransform(srcTri, dstTri);
         //Transformation durchführen
-        cv.warpPerspective(src, dst, kernel, new cv.Size(Zielbild.width, Zielbild.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
+        cv.warpAffine(src, dst, kernel, new cv.Size(Zielbild.width, Zielbild.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
         cv.imshow(this.canvas, dst);	//gleicher Zwischencanvas wird für das Erstellen und Extrahieren der Ausschnitte verwendet	
         src.delete();
         dst.delete();
 
         //Rest vom Zwischencanvas schwarz überzeichnen
-        this.zeichnePolygon(Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[1].x, Zielraster[1].y);
-        this.zeichnePolygon(Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[5].x, Zielraster[5].y);
-        this.zeichnePolygon(Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[21].x, Zielraster[21].y, Zielraster[this.j+5].x, Zielraster[this.j+5].y);
-        this.zeichnePolygon(Zielraster[this.j+5].x, Zielraster[this.j+5].y, Zielraster[21].x, Zielraster[21].y, Zielraster[1].x, Zielraster[1].y, Zielraster[this.j].x, Zielraster[this.j].y);
-         //
+        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j].x, Zielraster[this.j].y);
+        this.zeichnePolygon(Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[25].x, Zielraster[25].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y);
+        this.zeichnePolygon(Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[21].x, Zielraster[21].y);
+        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[21].x, Zielraster[21].y);
+        
         //Bildsegmnete in separaten Array speichern
-        this.Bildausschnitte[z] = cv.imread(this.canvas);
+        this.Bildausschnitte[this.z1] = cv.imread(this.canvas);
+        }
+
+        //untere Dreiecke
+        this.l = 0;
+        for(let z=1; z<=16; z++)
+        {   //später noch an das Teilverhältnis anpassen
+            switch (z)
+            {
+                case 5:
+                    this.l+=2;
+                    break;
+                case 9:
+                    this.l+=2;
+                    break;
+        
+                case 13:
+                    this.l+=2;
+                    break;
+                default:
+                    this.l++;
+            }
+        this.z2 ++;
+            
+        //Vierpunkttransformation
+        let src = cv.imread(Quellbild); //direkt das Bild laden
+        let dst = new cv.Mat();         //Matrix für das Ziel erstellen
+        //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
+        let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellraster[this.l].x, Quellraster[this.l].y, Quellraster[this.l+6].x, Quellraster[this.l+6].y, Quellraster[this.l+5].x, Quellraster[this.l+5].y]);
+        let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[this.l+5].x, Zielraster[this.l+5].y]);
+        //Transformationsmatrix berechnen
+        let kernel = cv.getAffineTransform(srcTri, dstTri);
+        //Transformation durchführen
+        cv.warpAffine(src, dst, kernel, new cv.Size(Zielbild.width, Zielbild.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
+        cv.imshow(this.canvas, dst);	//gleicher Zwischencanvas wird für das Erstellen und Extrahieren der Ausschnitte verwendet	
+        src.delete();
+        dst.delete();
+
+        //Rest vom Zwischencanvas schwarz überzeichnen
+        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[this.l].x, Zielraster[this.l].y);
+        this.zeichnePolygon(Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[5].x, Zielraster[5].y, Zielraster[25].x, Zielraster[25].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y);
+        this.zeichnePolygon(Zielraster[this.l+5].x, Zielraster[this.l+5].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[21].x, Zielraster[21].y);
+        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[this.l+5].x, Zielraster[this.l+5].y, Zielraster[21].x, Zielraster[21].y);
+        
+        //Bildsegmnete in separaten Array speichern
+        this.Bildausschnitte[this.z2] = cv.imread(this.canvas);
         }
     }
 
@@ -340,7 +421,7 @@ class BildBox{
         Ziel_ctx.fill();
 
         //es wird immer der Zielcanvas eingelesen und ein Bildausschnitt hinzuaddiert
-         for(let i=1; i<=Math.pow(this.teilverhältnis,2); i++)
+         for(let i=1; i<=32; i++)
         {
             let src1 = cv.imread(ZielCanvas);
             let src2 = this.Bildausschnitte[i];
@@ -361,9 +442,9 @@ class BildBox{
         this.ctx.lineTo(P2x, P2y);
         this.ctx.stroke();  
         this.ctx.lineTo(P3x, P3y); 
-        this.ctx.stroke();
-        this.ctx.lineTo(P4x, P4y);
         this.ctx.stroke();  
+        this.ctx.lineTo(P4x, P4y); 
+        this.ctx.stroke();
         this.ctx.closePath(); 
         this.ctx.stroke();     
         this.ctx.fill();
