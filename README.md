@@ -1,3 +1,2 @@
 # Studienarbeit-Bildmorphing
-
-Test
+Bei diesem Projekt handelt es sich um eine Studienarbeit an der DHBW im 6. Semester.
