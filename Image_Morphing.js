@@ -250,7 +250,6 @@ class BildBox
     bildzeichnen()
     { 
         this.ctx.drawImage(this.bild,1, 1, this.canvas.width, this.canvas.height);
- 
         this.punktezeichnen();
         this.gitterzeichnen(); 
 
@@ -282,7 +281,7 @@ class BildBox
     {
         //Dieser Canvas wird nur verwendet für die Segmente, kann ausgeblendet werden
         this.canvas = document.getElementById(canvasID);
-        this.canvas.style.display="none";  
+        //this.canvas.style.display="none";  
         this.ctx = this.canvas.getContext('2d');
         this.ctx.font = "16px Arial";
 
@@ -316,13 +315,25 @@ class BildBox
     }
 
     transformiereAusschnitte(Quellraster, Zielraster, Quellbild, Zielbild)
-    {  
+    {   this.canvas.width = Quellbild.width;
+        this.canvas.height = Quellbild.height;
+        let maskCanvas = document.getElementById("canvas_8");
+        maskCanvas.width = this.canvas.width;
+        maskCanvas.height = this.canvas.height;
+        let maskCtx = maskCanvas.getContext("2d");
+        let src = cv.imread(Quellbild);
         this.z1 = 0;
         this.z2 = 16;
+
         //obere Dreiecke
         this.j = 0;
-        for(let z=1; z<=16; z++)  //z<=Math.pow(this.teilverhältnis,2)
-        {   //später noch an das Teilverhältnis anpassen
+        for(let z=1; z<=16; z++)
+        {   
+            maskCtx.globalCompositeOperation = "source-over";
+            this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
+            maskCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            //später noch an das Teilverhältnis anpassen
             switch (z)
             {
                 case 5:
@@ -340,10 +351,9 @@ class BildBox
                     this.j++;
             }
         this.z1 ++;
-            
+
         //Vierpunkttransformation
-        let src = cv.imread(Quellbild); //direkt das Bild laden
-        let dst = new cv.Mat();         //Matrix für das Ziel erstellen
+        let dst = new cv.Mat();       
         //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
         let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellraster[this.j].x, Quellraster[this.j].y, Quellraster[this.j+1].x, Quellraster[this.j+1].y, Quellraster[this.j+6].x, Quellraster[this.j+6].y]);
         let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y]);
@@ -351,24 +361,36 @@ class BildBox
         let kernel = cv.getAffineTransform(srcTri, dstTri);
         //Transformation durchführen
         cv.warpAffine(src, dst, kernel, new cv.Size(Zielbild.width, Zielbild.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
-        cv.imshow(this.canvas, dst);	//gleicher Zwischencanvas wird für das Erstellen und Extrahieren der Ausschnitte verwendet	
-        src.delete();
+        cv.imshow(this.canvas, dst);		
+        //src.delete();
         dst.delete();
 
-        //Rest vom Zwischencanvas schwarz überzeichnen
-        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[this.j].x, Zielraster[this.j].y);
-        this.zeichnePolygon(Zielraster[this.j+1].x, Zielraster[this.j+1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[25].x, Zielraster[25].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y);
-        this.zeichnePolygon(Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[21].x, Zielraster[21].y);
-        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[this.j].x, Zielraster[this.j].y, Zielraster[this.j+6].x, Zielraster[this.j+6].y, Zielraster[21].x, Zielraster[21].y);
-        
-        //Bildsegmnete in separaten Array speichern
-        this.Bildausschnitte[this.z1] = cv.imread(this.canvas);
+        //Dreieck zur Maskierung zeichnen
+        maskCtx.lineWidth = 1;
+        maskCtx.beginPath();
+        maskCtx.moveTo(Zielraster[this.j].x+1, Zielraster[this.j].y+1);
+        maskCtx.lineTo(Zielraster[this.j+1].x-1, Zielraster[this.j+1].y+1);
+        maskCtx.lineTo(Zielraster[this.j+6].x-1, Zielraster[this.j+6].y)-1;
+        maskCtx.closePath();
+        maskCtx.stroke();
+        maskCtx.fill();
+ 
+        //zur Segmentierung das Bild in die Maske zeichnen
+        maskCtx.globalCompositeOperation = "source-in";
+        maskCtx.drawImage(this.canvas, 0, 0);
+
+        //Segmente einlesen und abspeichern
+        this.Bildausschnitte[this.z1] = cv.imread(maskCanvas);
         }
 
         //untere Dreiecke
         this.l = 0;
         for(let z=1; z<=16; z++)
-        {   //später noch an das Teilverhältnis anpassen
+        {   
+            maskCtx.globalCompositeOperation = "source-over";
+            this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
+            maskCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            //später noch an das Teilverhältnis anpassen
             switch (z)
             {
                 case 5:
@@ -387,71 +409,136 @@ class BildBox
         this.z2 ++;
             
         //Vierpunkttransformation
-        let src = cv.imread(Quellbild); //direkt das Bild laden
-        let dst = new cv.Mat();         //Matrix für das Ziel erstellen
+        let dst = new cv.Mat();        
         //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
-        let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellraster[this.l].x, Quellraster[this.l].y, Quellraster[this.l+6].x, Quellraster[this.l+6].y, Quellraster[this.l+5].x, Quellraster[this.l+5].y]);
-        let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[this.l+5].x, Zielraster[this.l+5].y]);
+        let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellraster[this.l].x, Quellraster[this.l].y, Quellraster[this.l+5].x, Quellraster[this.l+5].y, Quellraster[this.l+6].x, Quellraster[this.l+6].y]);
+        let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[this.l+5].x, Zielraster[this.l+5].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y]);
         //Transformationsmatrix berechnen
         let kernel = cv.getAffineTransform(srcTri, dstTri);
         //Transformation durchführen
         cv.warpAffine(src, dst, kernel, new cv.Size(Zielbild.width, Zielbild.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
-        cv.imshow(this.canvas, dst);	//gleicher Zwischencanvas wird für das Erstellen und Extrahieren der Ausschnitte verwendet	
-        src.delete();
+        cv.imshow(this.canvas, dst);	
+       // src.delete();
         dst.delete();
 
-        //Rest vom Zwischencanvas schwarz überzeichnen
-        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[5].x, Zielraster[5].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[this.l].x, Zielraster[this.l].y);
-        this.zeichnePolygon(Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[5].x, Zielraster[5].y, Zielraster[25].x, Zielraster[25].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y);
-        this.zeichnePolygon(Zielraster[this.l+5].x, Zielraster[this.l+5].y, Zielraster[this.l+6].x, Zielraster[this.l+6].y, Zielraster[25].x, Zielraster[25].y, Zielraster[21].x, Zielraster[21].y);
-        this.zeichnePolygon(Zielraster[1].x, Zielraster[1].y, Zielraster[this.l].x, Zielraster[this.l].y, Zielraster[this.l+5].x, Zielraster[this.l+5].y, Zielraster[21].x, Zielraster[21].y);
-        
-        //Bildsegmnete in separaten Array speichern
-        this.Bildausschnitte[this.z2] = cv.imread(this.canvas);
+        //Dreieck zur Maskierung zeichnen
+        maskCtx.lineWidth = 1;
+        maskCtx.beginPath();
+        maskCtx.moveTo(Zielraster[this.l].x, Zielraster[this.l].y);
+        maskCtx.lineTo(Zielraster[this.l+5].x, Zielraster[this.l+5].y);
+        maskCtx.lineTo(Zielraster[this.l+6].x, Zielraster[this.l+6].y);
+        maskCtx.closePath();
+        maskCtx.stroke();
+        maskCtx.fill();
+
+        //zur Segmentierung das Bild in die Maske zeichnen 
+        maskCtx.globalCompositeOperation = "source-in";
+        maskCtx.drawImage(this.canvas, 0, 0);
+
+        //Segmente einlesen und abspeichern
+        this.Bildausschnitte[this.z2] =cv.imread(maskCanvas);
         }
-    }
 
-    addiereAusschnitte(Zielbild, ZielCanvas, Ziel_ctx)
-    {   //Canvasmaße initialisieren
-        ZielCanvas.width = Zielbild.width;
-        ZielCanvas.height = Zielbild.height;
-        //Canvas schwarz überzeichnen, da sonst Addition des ersten Bildes fehlerhaft
-        Ziel_ctx.rect(0,0, Zielbild.width, Zielbild.height);
-        Ziel_ctx.fillStyle = "black";
-        Ziel_ctx.fill();
+        this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
+        maskCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let src1 = cv.imread(maskCanvas)
+        let dsrc = new cv.Mat();
 
-        //es wird immer der Zielcanvas eingelesen und ein Bildausschnitt hinzuaddiert
-         for(let i=1; i<=32; i++)
+        //Bildausschnitte zum Gesamtbild aufaddieren 
+        for(let i=1; i<=32;i++)
         {
-            let src1 = cv.imread(ZielCanvas);
-            let src2 = this.Bildausschnitte[i];
-            let dst = new cv.Mat();
-                
-            cv.add(	src1, src2, dst);
-            cv.imshow(ZielCanvas,dst);
-        } 
+            let src2 = this.Bildausschnitte[i];  
+            cv.add(src1, src2, dsrc);
+            src1 = dsrc;
+        }
+        //Ergebnisbild ausgeben
+        cv.imshow(maskCanvas,dsrc,0,0);
+
+        //Weiße Pixel im Bild durch Nachbarn ersetzen
+        let Bilddaten = new ImageData(Quellbild.width, Quellbild.height);
+        let gefilterteBilddaten = new ImageData(Quellbild.width, Quellbild.height);
+        Bilddaten = maskCtx.getImageData(0,0,Quellbild.width,Quellbild.height);
+        gefilterteBilddaten = this.WeißePixelManipulieren(Bilddaten);
+        maskCtx.putImageData(gefilterteBilddaten,0,0);
+
     }
 
-    //Schwarze Polygone um das Zielsegment zeichnen
-    zeichnePolygon(P1x, P1y, P2x, P2y, P3x, P3y, P4x, P4y)
-    {
-        this.ctx.fillStyle = "black";
-        
-        this.ctx.beginPath();
-        this.ctx.moveTo(P1x, P1y);  
-        this.ctx.lineTo(P2x, P2y);
-        this.ctx.stroke();  
-        this.ctx.lineTo(P3x, P3y); 
-        this.ctx.stroke();  
-        this.ctx.lineTo(P4x, P4y); 
-        this.ctx.stroke();
-        this.ctx.closePath(); 
-        this.ctx.stroke();     
-        this.ctx.fill();
-    }  
-   
+    WeißePixelManipulieren(pixel)
+    {   var pixeldata = pixel.data
+        let maskCanvas = document.getElementById("canvas_8");
+        maskCanvas.width = this.canvas.width;
+        maskCanvas.height = this.canvas.height;
+        let maskCtx = maskCanvas.getContext("2d");
+
+        for(let i=0; i<pixeldata.length; i+=4)
+        { //console.log(pixeldata)
+            if(pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254 )
+            { console.log(pixeldata[i])
+                pixeldata[i] = pixeldata[i+4];     // red
+                pixeldata[i + 1] = pixeldata[i+5]; // green
+                pixeldata[i + 2] = pixeldata[i+6]; // blue
+                pixeldata[i + 3] = 255;
+            }
+
+            if((pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254) && (pixeldata[i+4]>=254 || pixeldata[i+5]>=254 || pixeldata[i+6]>=254))
+            { console.log(pixeldata[i+4*maskCanvas.width])
+                pixeldata[i] = pixeldata[i+4+4*maskCanvas.width];     // red
+                pixeldata[i + 1] = pixeldata[i+5+4*maskCanvas.width]; // green
+                pixeldata[i + 2] = pixeldata[i+6+4*maskCanvas.width]; // blue
+                pixeldata[i + 3] = 255;
+            }
+
+            if((pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254) && (pixeldata[i+4]>=254 || pixeldata[i+5]>=254 || pixeldata[i+6]>=254) && (pixeldata[i+8]>=254 || pixeldata[i+9]>=254 || pixeldata[i+10]>=254))
+            { console.log(pixeldata[i+4*maskCanvas.width])
+                pixeldata[i] = pixeldata[i+4+4*maskCanvas.width];     // red
+                pixeldata[i + 1] = pixeldata[i+5+4*maskCanvas.width]; // green
+                pixeldata[i + 2] = pixeldata[i+6+4*maskCanvas.width]; // blue
+                pixeldata[i + 3] = 255;
+            }
+        }
+        console.log(pixel)
+        maskCtx.putImageData(pixel, 0, 0);
+        return pixel;
+    }
+
     abstandRechnen(Punkt1X, Punkt1Y, Punkt2X, Punkt2Y)
     {
         return Math.sqrt(Math.pow((Punkt1X-Punkt2X),2)+Math.pow((Punkt1Y-Punkt2Y),2));
     }     
+
+    medianFilter(imageData) 
+    {
+        let data = imageData.data;
+        let width = imageData.width;
+        let height = imageData.height;
+        let filteredImageData = new ImageData(width, height);
+        let filteredData = filteredImageData.data;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+            // 3x3 Nachbarschaftsarray erstellen
+            let neighborhood = [];
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                // Pixel muss im Feld liegen
+                if (y + i >= 0 && y + i < height && x + j >= 0 && x + j < width) {
+                    let pixelIndex = (y + i) * width * 4 + (x + j) * 4;
+                    neighborhood.push(data[pixelIndex]);
+                }
+                }
+            }
+            neighborhood.sort();
+            //medianisieren
+            let median = neighborhood[Math.floor(neighborhood.length / 2)];
+
+            
+            let filteredPixelIndex = y * width * 4 + x * 4;
+            filteredData[filteredPixelIndex] = data[filteredPixelIndex];//median;
+            filteredData[filteredPixelIndex + 1] = data[filteredPixelIndex+1]; //median;
+            filteredData[filteredPixelIndex + 2] = data[filteredPixelIndex+2];//median;
+            filteredData[filteredPixelIndex + 3] = 255;
+            }
+        }
+        return filteredImageData;
+        }
 } 

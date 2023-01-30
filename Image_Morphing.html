@@ -17,6 +17,7 @@
     <canvas id="canvas_5"  style="border:2px solid #000000;"></canvas>
     <canvas id="canvas_6"  style="border:2px solid #000000;"></canvas>
     <canvas id="canvas_7"  style="border:2px solid #000000;"></canvas>   
+    <canvas id="canvas_8"  style="border:2px solid #000000;"></canvas> 
 </div>
 
 <button type="button1" id="btn1" onclick="ButtonTransformation()">Morphing starten</button>
@@ -47,26 +48,7 @@
     //Buttonfunktion
     function ButtonTransformation()
     {   
-        //Funktion von Morphing1 für das Morphen aufrufen
         Morphing1.transformiereAusschnitte(Morphing1.Punkte1, Morphing1.Punkte2, Morphing1.Bild1, Morphing1.Bild2);
-        Morphing1.addiereAusschnitte(Morphing1.Bild2, Morphing1.ZielCanvas1, Morphing1.Ziel_ctx1);
-        Morphing1.transformiereAusschnitte(Morphing1.Punkte2, Morphing1.Punkte1, Morphing1.Bild2, Morphing1.Bild1);
-        Morphing1.addiereAusschnitte(Morphing1.Bild1, Morphing1.ZielCanvas2, Morphing1.Ziel_ctx2);
-        
-        let canvas = document.getElementById('canvas_6');
-        let ctx = canvas.getContext('2d');
-        let src1 = cv.imread(Morphing1.Bild1);
-        let src2 = cv.imread('canvas_5');
-        let src3 = cv.imread(Morphing1.Bild2);
-        let src4 = cv.imread('canvas_4')
-        let dst1 = new cv.Mat();
-        let dst2 = new cv.Mat();
-        
-        //Ergebnisbilder erstellen durch gewichtete Addition 
-        cv.addWeighted(src1, 0.5, src2, 0.5, 0, dst1);
-        cv.addWeighted(src3, 0.5, src4, 0.5, 0, dst2);
-        cv.imshow('canvas_6',dst1);
-        cv.imshow('canvas_7',dst2);
     }
 
 </script>
