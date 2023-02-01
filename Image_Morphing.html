@@ -6,118 +6,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Face Morphing Demonstrator</title>
 </head>
-<header>
-    <img src="DHBW_Logo.jpg" alt="logo">
-    <p>Studienarbeit 2</p>
-  </header>
-
 <body>
 
 <div>  
     <!--Canvas-Elemente-->  
-    <canvas id="QuellCanvas"  style="border:2px solid #000000;"></canvas>   
-    <canvas id="ZielCanvas"  style="border:2px solid #000000;"></canvas> 
-    <canvas id="TransformationsCanvas"  style="border:2px solid #000000;"></canvas>
-    <canvas id="maskCanvas"  style="border:2px solid #000000;"></canvas>
-     <canvas id="canvas_5"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_1"  style="border:2px solid #000000;"></canvas>   
+    <canvas id="canvas_2"  style="border:2px solid #000000;"></canvas> 
+    <canvas id="canvas_3"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_4"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_5"  style="border:2px solid #000000;"></canvas>
     <canvas id="canvas_6"  style="border:2px solid #000000;"></canvas>
     <canvas id="canvas_7"  style="border:2px solid #000000;"></canvas>   
-    <canvas id="canvas_8"  style="border:2px solid #000000;"></canvas>
+    <canvas id="canvas_8"  style="border:2px solid #000000;"></canvas> 
 </div>
-
-<style>
-    input[type="text"] 
-    {
-      width: 15px;
-      height: 15px;
-      font-size: 20px;
-      padding: 6px;
-    }
-  </style>
-
-<form>
-    <label for="n">Anzahl Zwischennetze:</label>
-    <input type="text" id="n" name="n">    
-</form>
 
 <button type="button1" id="btn1" onclick="ButtonTransformation()">Morphing starten</button>
 
 <!-- JavaScript-Dateien einbinden-->
 <script src="opencv.js" type="text/javascript"></script>
 <script src="Image_Morphing.js" ></script>
-  
+
 <script>
-    //BildBoxen erstellen und initialisieren
+    //BildBoxen erstellen
     let BildBox1= new BildBox();
     let BildBox2= new BildBox();
-    BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png');
-    BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png');
-
-    if(BildBox1.bild.width == BildBox2.bild.width && BildBox1.bild.height == BildBox2.bild.height)
-    {
-        var width = BildBox1.bild.width;
-        var height = BildBox1.bild.height;
-    }
+    //BildBoxen initialisieren
+    BildBox1.init('canvas_1','Thomas_1_zugeschnitten.png');
+    BildBox2.init('canvas_2','Viktor_1_zugeschnitten.png');
 
     //Morphing1 erstellen und initialisieren 
-    let Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', width, height);
+    let Morphing1=(new Morphing()).init('canvas_3','canvas_4','canvas_5');
 
-    
     //Uebergabe-Event auffangen und Daten an Morphing1 übergeben
     addEventListener('Uebergabe', function (e) 
     {
         let info=e.detail;
         Morphing1.uebertragen(info.sender, info.Punkte, info.Bild, info.teilverhältnis);
-    }, false);
 
-    var n;
+    }, false);
 
     //Buttonfunktion
     function ButtonTransformation()
     {   
-        //Abfrage des Eingabewertes für die Anzahl der Zwischennetze
-        let ndir = document.getElementById("n").value
-        if(isNaN(ndir) || ndir >= 5 || !ndir)
-        {
-            n = 1;
-        }
-        else
-            n = ndir;
-
-        //Beim ersten Morphing darf nicht der Canvas sondern das Bild eingelesen werden, sonst wird das Netz miteingelesen 
-        //Bei den folgenden ist es egal
-        let Morph1 = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, BildBox1.bild);
-        let Morph2 = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Morphing1.QuellpunkteM, BildBox2.bild);
-        
-        cv.imshow('canvas_5', Morph1);
-        cv.imshow('canvas_6', Morph2);
-
-        //Netzinterpolation
-        var kZwischenpunkte = BildBox1.punkteerstellen();
-        //console.log(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM)
-        var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, kZwischenpunkte, n);
-       
-        BildBox1.punktezeichnen(Zwischenpunkte[1]);
-
-       
-        // console.log(Zwischenpunkte[1][7].x);
-       // console.log(Zwischenpunkte[2][7].x);
-
-        // console.log(Zwischenpunkte[1][1].x);
-        // console.log(Zwischenpunkte[2][1].x);
-        // //Transformation mit Zwischennetzen vom Quellbild zum Zielbild
-        // Morphing1.transformiereAusschnitte(Morphing1.Punkte1, Morphing1.Zwischenpunkte[i], Morphing1.Bild1, Morphing1.Bild2);
-        // for(let i=1; i<=n; i++)
-        // {
-            
-        // }
-        // Morphing1.transformiereAusschnitte(Morphing1.Punkte1, Morphing1.Punkte2, Morphing1.Bild1, Morphing1.Bild2);
-
-
-        //Addition der einzelnen Bilder
-        
-
-        
+        Morphing1.transformiereAusschnitte(Morphing1.Punkte1, Morphing1.Punkte2, Morphing1.Bild1, Morphing1.Bild2);
     }
 
 </script>
