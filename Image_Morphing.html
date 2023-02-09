@@ -44,7 +44,13 @@
 
 <!-- JavaScript-Dateien einbinden-->
 <script src="opencv.js" type="text/javascript"></script>
-<script src="Image_Morphing.js" ></script>
+<script src="Punkt_Klasse.js"></script>
+<script src="BildBox_Klasse.js" ></script>
+<script src="Morphing_Klasse.js" ></script>
+
+ 
+                                
+
   
 <script>
     //BildBoxen erstellen und initialisieren
@@ -52,6 +58,7 @@
     let BildBox2= new BildBox();
     BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png');
     BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png');
+    
 
     if(BildBox1.bild.width == BildBox2.bild.width && BildBox1.bild.height == BildBox2.bild.height)
     {
@@ -93,11 +100,13 @@
         cv.imshow('canvas_6', Morph2);
 
         //Netzinterpolation
-        var kZwischenpunkte = BildBox1.punkteerstellen();
+        //var kZwischenpunkte = [];
+        //kZwischenpunkte = BildBox1.punkteerstellen(kZwischenpunkte);
+        //console.log(kZwischenpunkte)
         //console.log(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM)
-        var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, kZwischenpunkte, n);
+        var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, n);
        
-        BildBox1.punktezeichnen(Zwischenpunkte[1]);
+        //BildBox1.punktezeichnen(Zwischenpunkte[1]);
 
        
         // console.log(Zwischenpunkte[1][7].x);
