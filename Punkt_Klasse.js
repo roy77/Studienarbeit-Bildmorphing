@@ -9,7 +9,7 @@ class Punkt{
         this.radius=5;
         this.farbe="black";   
     }
-
+ 
     angewählt(px,py)
     {   
         var d = this.abstandRechnen(px, py, this.x, this.y);
