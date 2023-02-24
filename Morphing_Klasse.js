@@ -242,7 +242,7 @@ class Morphing
 
         return transformiertesBild;
     }
- 
+  
     WeißePixelManipulieren(pixel)
     {   var pixeldata = pixel.data
         

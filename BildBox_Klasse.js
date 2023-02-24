@@ -71,7 +71,7 @@ class BildBox
             }
         } 
     }
- 
+  
     onmousedown()
     {   
         this.startX = this.canvasX;

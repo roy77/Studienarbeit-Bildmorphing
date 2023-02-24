@@ -224,7 +224,7 @@
             cv.addWeighted(transformierteQuellbilder[i-1], Gewichtung[j], transformierteZielbilder[j], Gewichtung[i-1], 0, Morphs[i]);
             cv.imshow(Ergebniscanvas[i],Morphs[i]); 
         }
-
+ 
         Morphs[4] = new cv.Mat();
         cv.addWeighted(transformierteQuellbilder[3], 0, BildBox2.bildMat, 1, 0, Morphs[4]);
         cv.imshow(Ergebniscanvas[4],Morphs[4])
