@@ -3,6 +3,7 @@ class BildBox
     constructor()
     {
         this.bild = new Image();
+        this.bildMat;
         this.teilverhältnis = 4;
         this.xz=0;
         this.yz=0;
@@ -11,7 +12,7 @@ class BildBox
         this.canvasY;   
         this.startX;
         this.startY;
-    }
+    } 
 
     init(canvasID,imageSRC) 
     {
@@ -31,8 +32,8 @@ class BildBox
         this.canvas.width= this.bild.width;
 
         //Bild zeichnen
-        this.bild.onload = this.bildzeichnen.bind(this);
-                
+        this.bild.onload = this.bildzeichnen.bind(this);     
+
         //initialer Aufruf der Netz-Zeichenfunktionen
         this.punkteerstellen(this.Punkte); 
         this.rechneKoordianten(this.Punkte);
@@ -221,6 +222,8 @@ class BildBox
     bildzeichnen()
     { 
         this.ctx.drawImage(this.bild,1, 1, this.canvas.width, this.canvas.height);
+        this.bildMat = new cv.Mat();
+        this.bildMat = cv.imread(this.canvas);
         this.punktezeichnen(this.Punkte);
         this.gitterzeichnen(); 
 
