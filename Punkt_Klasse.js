@@ -16,7 +16,6 @@ class Punkt{
         if (d < this.radius+10)
         {
             this.wirdGezogen = true;
-            this.farbe = "red"; 
         }
     }
 

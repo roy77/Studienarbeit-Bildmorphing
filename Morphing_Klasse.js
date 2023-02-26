@@ -2,12 +2,8 @@ class Morphing
 {
     constructor()
     {
-        this.Box1;
-        this.Box2;
         this.QuellpunkteM = [];
         this.ZielpunkteM = [];
-        this.Bild1 = new Image();
-        this.Bild2 = new Image();
         this.width;
         this.height;
         this.maskCanvas;
@@ -25,7 +21,7 @@ class Morphing
         this.width = width;
         this.height = height;
 
-        //Dieser Canvas wird verwendet für die Zwischentransformation, kann ausgeblendet werden
+        //TransformationsCanvas wird verwendet für die Zwischentransformation, kann ausgeblendet werden
         this.TransformationsCanvas = document.getElementById(TransformationsCanvasID);
         this.TransformationsCanvas.style.display="none";  
         this.TransformationCtx = this.TransformationsCanvas.getContext('2d');
@@ -33,7 +29,7 @@ class Morphing
         this.TransformationsCanvas.width = this.width;
         this.TransformationsCanvas.height = this.height;
 
-        //Maskencanvas wird für das Isolieren und abspeichern der Bildsegmente verwendet
+        //maskCanvas wird für das Isolieren und abspeichern der Bildsegmente verwendet
         this.maskCanvas = document.getElementById(maskCanvasID);
         this.maskCanvas.style.display="none";  
         this.maskCtx = this.maskCanvas.getContext('2d');
@@ -52,13 +48,11 @@ class Morphing
         if(canvasID == 'QuellCanvas')
         {
             this.QuellpunkteM = [...PunkteAusBildBox]; //this.deepCopy(PunkteAusBildBox); 
-            this.Bild1 = BildAusBildBox;
         }
         
         if(canvasID == 'ZielCanvas')
         {
             this.ZielpunkteM = [...PunkteAusBildBox]; //this.deepCopy(PunkteAusBildBox); 
-            this.Bild2 = BildAusBildBox;
         }
     }
 
@@ -245,79 +239,38 @@ class Morphing
    
     WeißePixelManipulieren(pixel)
     {   var pixeldata = pixel.data
-        console.log(this.width)
         for(let i=0; i<pixeldata.length; i+=4)
         { 
-            if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) && ((pixeldata[i+20]>254 || pixeldata[i+21]>254 || pixeldata[i+22]>254)))
-            {   
-                //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-                pixeldata[i] = pixeldata[i+12-4*this.width];     // red -1*4*this.width
-                pixeldata[i + 1] = pixeldata[i+13-4*this.width]; // green
-                pixeldata[i + 2] = pixeldata[i+14-4*this.width]; // blue
-                pixeldata[i + 3] = 255; 
-            }
+            // if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) && ((pixeldata[i+20]>254 || pixeldata[i+21]>254 || pixeldata[i+22]>254)))
+            // {   
+            //     //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
+            //     pixeldata[i] = pixeldata[i+12-4*this.width];     // red -1*4*this.width
+            //     pixeldata[i + 1] = pixeldata[i+13-4*this.width]; // green
+            //     pixeldata[i + 2] = pixeldata[i+14-4*this.width]; // blue
+            //     pixeldata[i + 3] = 255; 
+            // }
 
-            if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) &&((pixeldata[i+4]>254 || pixeldata[i+5]>254 || pixeldata[i+6]>254)))
-            {   
-                //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-                pixeldata[i] = pixeldata[i+12];     // red -1*4*this.width
-                pixeldata[i + 1] = pixeldata[i+13]; // green
-                pixeldata[i + 2] = pixeldata[i+14]; // blue
-                pixeldata[i + 3] = 255; 
-            }
+            // if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) &&((pixeldata[i+4]>254 || pixeldata[i+5]>254 || pixeldata[i+6]>254)))
+            // {   
+            //     //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
+            //     pixeldata[i] = pixeldata[i+12];     // red -1*4*this.width
+            //     pixeldata[i + 1] = pixeldata[i+13]; // green
+            //     pixeldata[i + 2] = pixeldata[i+14]; // blue
+            //     pixeldata[i + 3] = 255; 
+            // }
 
             if(pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254)
             {   
                 //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-                pixeldata[i] = pixeldata[i+4];     // red -1*4*this.width
-                pixeldata[i + 1] = pixeldata[i+5]; // green
-                pixeldata[i + 2] = pixeldata[i+6]; // blue
+                pixeldata[i] = pixeldata[i+4-8*this.width];     // red -1*4*this.width
+                pixeldata[i + 1] = pixeldata[i+5-8*this.width]; // green
+                pixeldata[i + 2] = pixeldata[i+6-8*this.width]; // blue
                 pixeldata[i + 3] = 255; 
             }
         }
         return pixel;
-    }
-               
-    abstandRechnen(Punkt1X, Punkt1Y, Punkt2X, Punkt2Y)
-    {
-        return Math.sqrt(Math.pow((Punkt1X-Punkt2X),2)+Math.pow((Punkt1Y-Punkt2Y),2));
-    }     
+    }    
     
-    //Hilfsfunktionen für die tiefe Arraykopie
-    deepCopy(arr)
-    {
-        let copy = [];
-        arr.forEach(elem => {
-          if(Array.isArray(elem)){
-            copy.push(this.deepCopy(elem))
-          }else{
-            if (typeof elem === 'object') {
-              copy.push(this.deepCopyObject(elem))
-          } else {
-              copy.push(elem)
-            }
-          }
-        })
-        return copy;
-    }
-      
-    deepCopyObject(obj)
-    {
-        let tempObj = {};
-        for (let [key, value] of Object.entries(obj)) {
-          if (Array.isArray(value)) {
-            tempObj[key] = this.deepCopy(value);
-          } else {
-            if (typeof value === 'object') {
-              tempObj[key] = this.deepCopyObject(value);
-            } else {
-              tempObj[key] = value
-            }
-          }
-        }
-        return tempObj;
-    }
-
     medianFilter(imageData) 
     {
         const data = imageData.data;
@@ -356,7 +309,6 @@ class Morphing
             result.data[index + 3] = 255;
             }
         }
-
         return result;
         }
 
@@ -413,5 +365,40 @@ class Morphing
             // Gib das gefilterte ImageData-Objekt zurück
             return imageData;
         }
+
+    //Hilfsfunktionen für die tiefe Arraykopie
+    deepCopy(arr)
+    {
+        let copy = [];
+        arr.forEach(elem => {
+          if(Array.isArray(elem)){
+            copy.push(this.deepCopy(elem))
+          }else{
+            if (typeof elem === 'object') {
+              copy.push(this.deepCopyObject(elem))
+          } else {
+              copy.push(elem)
+            }
+          }
+        })
+        return copy;
+    }
+      
+    deepCopyObject(obj)
+    {
+        let tempObj = {};
+        for (let [key, value] of Object.entries(obj)) {
+          if (Array.isArray(value)) {
+            tempObj[key] = this.deepCopy(value);
+          } else {
+            if (typeof value === 'object') {
+              tempObj[key] = this.deepCopyObject(value);
+            } else {
+              tempObj[key] = value
+            }
+          }
+        }
+        return tempObj;
+    }
           
 }

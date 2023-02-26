@@ -4,7 +4,7 @@ class BildBox
     {
         this.bild = new Image();
         this.bildMat;
-        this.teilverhältnis = 4;
+        this.teilverhältnis = 4; //nicht verändern, Code nicht für andere Teilverhältnisse ausgelegt
         this.xz=0;
         this.yz=0;
         this.Punkte = [];
@@ -12,6 +12,7 @@ class BildBox
         this.canvasY;   
         this.startX;
         this.startY;
+        this.MouseUpZähler=0;
     } 
 
     init(canvasID,imageSRC) 
@@ -22,9 +23,7 @@ class BildBox
         this.ctx.font = "16px Arial";
 
         //Alles zurücksetzen
-        this.Punkte = [];
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.bild.src = imageSRC;
 
         //Maße des Canvas initialisieren
@@ -42,7 +41,7 @@ class BildBox
         
         //Evente definieren
         this.canvas.addEventListener('mouseup', this.onmouseup.bind(this)); 
-        this.canvas.addEventListener('mouseout', this.onmouseout.bind(this)); 
+        //this.canvas.addEventListener('mouseout', this.onmouseout.bind(this)); 
         this.canvas.addEventListener('mousedown', this.onmousedown.bind(this));
         this.canvas.addEventListener('mousemove', this.onmousemove.bind(this));        
     }
@@ -50,27 +49,37 @@ class BildBox
     //Eventfunktionen
     onmouseup()
     { 
+        this.MouseUpZähler++;
+
         for(let i=1; i< this.Punkte.length; i++)
         {
             if (this.Punkte[i].wirdGezogen)
             {
-                this.Punkte[i].farbe = "black";
                 this.Punkte[i].wirdGezogen = false;
             } 
         }
+        
+        dispatchEvent(new CustomEvent('MorphingStart', 
+        {   
+            //Übergabeinformationen definieren
+            detail:
+            {
+                sender: this.canvas.id,
+                zähler: this.MouseUpZähler  
+            }
+        }));
     }
 
-    onmouseout()
-    { 
-        for(let i=1; i< this.Punkte.length; i++)
-        {
-            if (this.Punkte[i].wirdGezogen)
-            {
-                this.Punkte[i].farbe = "black";
-                this.Punkte[i].wirdGezogen = false;
-            }
-        } 
-    }
+    // onmouseout()
+    // { 
+    //     for(let i=1; i< this.Punkte.length; i++)
+    //     {
+    //         if (this.Punkte[i].wirdGezogen)
+    //         {
+    //             this.Punkte[i].wirdGezogen = false;
+    //         }
+    //     } 
+    // }
   
     onmousedown()
     {   
