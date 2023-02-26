@@ -80,6 +80,7 @@
     <canvas id="Ergebniscanvas_2"  style="display:none;"></canvas>
     <canvas id="Ergebniscanvas_3"  style="display:none;"></canvas>   
     <canvas id="Ergebniscanvas_4"  style="display:none;"></canvas>
+    <canvas id="Exportcanvas" ></canvas>
 </div>
 
 <div id="meldung" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px; background-color: #1ce30a; border: 1px solid #cccccc; border-radius: 5px; box-shadow: 0 0 5px #999;"></div>
@@ -108,7 +109,7 @@
     var Zwischencanvas = [];
     var Ergebniscanvas = [];
     var Gewichtung = [0.25, 0.5, 0.75];
-    var scale = 1.75;
+    var scale = 2;
     var ÜbergabeMatrix; //= new cv.Mat();
 
     var Ausgabecanvas = document.getElementById('Ausgabecanvas');
@@ -229,8 +230,12 @@
         cv.addWeighted(transformierteQuellbilder[3], 0, BildBox2.bildMat, 1, 0, Morphs[4]);
         cv.imshow(Ergebniscanvas[4],Morphs[4])
 
-        //Bilddatei zur weiteren Untersuchung der Störungen exportieren 
-        cv.imwrite('C:\Users\thoma\OneDrive\Dokumente\Hochschule\6. Semester\Studienarbeit\Untersuchungen\image.jpg', transformierteQuellbilder[0]);
+        //Bilddatei zur weiteren Untersuchung der Störungen exportieren
+        // cv.imshow(Exportcanvas,transformierteQuellbilder[0])
+        // const link = document.createElement('a');
+        // link.download = 'image.png';
+        // link.href = Exportcanvas.toDataURL('image/png');
+        // link.click();
 
         //Meldetext, sobald Morphing abgeschlossen, da bei großen Skalierungsfaktor lange Laufzeit
         meldungEinblenden("Morphing erfolgreich durchgeführt!", 1500);

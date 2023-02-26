@@ -236,67 +236,48 @@ class Morphing
         let Bilddaten = new ImageData(this.width, this.height);
         let gefilterteBilddaten = new ImageData(this.width, this.height);
         Bilddaten = this.maskCtx.getImageData(0,0,this.width,this.height);
-        // gefilterteBilddaten = this.removeLines(Bilddaten);
+        gefilterteBilddaten = this.WeißePixelManipulieren(Bilddaten);
         this.maskCtx.putImageData(Bilddaten,0,0);
         transformiertesBild = cv.imread(this.maskCanvas);
-
+        
         return transformiertesBild;
     }
-  
+   
     WeißePixelManipulieren(pixel)
     {   var pixeldata = pixel.data
-        
+        console.log(this.width)
         for(let i=0; i<pixeldata.length; i+=4)
         { 
-            if(pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254 )
+            if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) && ((pixeldata[i+20]>254 || pixeldata[i+21]>254 || pixeldata[i+22]>254)))
             {   
                 //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-                pixeldata[i] = pixeldata[i+8-1*4*this.width];     // red
-                pixeldata[i + 1] = pixeldata[i+9-1*4*this.width]; // green
-                pixeldata[i + 2] = pixeldata[i+10-1*4*this.width]; // blue
+                pixeldata[i] = pixeldata[i+12-4*this.width];     // red -1*4*this.width
+                pixeldata[i + 1] = pixeldata[i+13-4*this.width]; // green
+                pixeldata[i + 2] = pixeldata[i+14-4*this.width]; // blue
+                pixeldata[i + 3] = 255; 
+            }
+
+            if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) &&((pixeldata[i+4]>254 || pixeldata[i+5]>254 || pixeldata[i+6]>254)))
+            {   
+                //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
+                pixeldata[i] = pixeldata[i+12];     // red -1*4*this.width
+                pixeldata[i + 1] = pixeldata[i+13]; // green
+                pixeldata[i + 2] = pixeldata[i+14]; // blue
+                pixeldata[i + 3] = 255; 
+            }
+
+            if(pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254)
+            {   
+                //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
+                pixeldata[i] = pixeldata[i+4];     // red -1*4*this.width
+                pixeldata[i + 1] = pixeldata[i+5]; // green
+                pixeldata[i + 2] = pixeldata[i+6]; // blue
                 pixeldata[i + 3] = 255; 
             }
         }
         return pixel;
     }
-
-    WeißePixelManipulierenV3(pixel)
-    {
-        var pixeldata = pixel.data
-
-        for(let i=0; i<pixeldata.length; i+=4)
-        { 
-            if(pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254 )
-            {
-                pixeldata[i] = pixeldata[i+8-1*4*this.width];     // red
-                pixeldata[i + 1] = pixeldata[i+9-1*4*this.width]; // green
-                pixeldata[i + 2] = pixeldata[i+10-1*4*this.width]; // blue
-                pixeldata[i + 3] = 255;  
-            }
-
-            
-            // if((pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254) && (pixeldata[i+4]>=254 || pixeldata[i+5]>=254 || pixeldata[i+6]>=254))
-            // { 
-            //     pixeldata[i] = pixeldata[i+4+4*maskCanvas.width];     // red
-            //     pixeldata[i + 1] = pixeldata[i+5+4*maskCanvas.width]; // green
-            //     pixeldata[i + 2] = pixeldata[i+6+4*maskCanvas.width]; // blue
-            //     pixeldata[i + 3] = 255;
-            // }
-
-            // if((pixeldata[i]>=254 || pixeldata[i+1]>=254 || pixeldata[i+2]>=254) && (pixeldata[i+4]>=254 || pixeldata[i+5]>=254 || pixeldata[i+6]>=254) && (pixeldata[i+8]>=254 || pixeldata[i+9]>=254 || pixeldata[i+10]>=254))
-            // { 
-            //     pixeldata[i] = pixeldata[i+4+4*maskCanvas.width];     // red
-            //     pixeldata[i + 1] = pixeldata[i+5+4*maskCanvas.width]; // green
-            //     pixeldata[i + 2] = pixeldata[i+6+4*maskCanvas.width]; // blue
-            //     pixeldata[i + 3] = 255;
-            // }
-
-
-
-        }
-        return pixel;
-    }
-
+               
     abstandRechnen(Punkt1X, Punkt1Y, Punkt2X, Punkt2Y)
     {
         return Math.sqrt(Math.pow((Punkt1X-Punkt2X),2)+Math.pow((Punkt1Y-Punkt2Y),2));
@@ -339,49 +320,6 @@ class Morphing
 
     medianFilter(imageData) 
     {
-        let data = imageData.data;
-        let width = imageData.width;
-        let height = imageData.height;
-        let filteredImageData = new ImageData(width, height);
-        let filteredData = filteredImageData.data;
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-            // 3x3 Nachbarschaftsarray erstellen
-            let neighborhood = [];
-            for (let i = -3; i <= 3; i++) {
-                for (let j = -3; j <= 3; j++) {
-                // Pixel muss im Feld liegen
-                if (y + i >= 0 && y + i < height && x + j >= 0 && x + j < width) {
-                    let pixelIndex = (y + i) * width * 4 + (x + j) * 4;
-                    neighborhood.push(data[pixelIndex]);
-                }
-                }
-            }
-            neighborhood.sort();
-            //medianisieren
-            let median; //= neighborhood[Math.floor(neighborhood.length / 2)];
-            let r=0;
-            for(let i=0; i<=neighborhood.length;i++)
-            {
-                if(neighborhood[i]!=255 && neighborhood[i]!=254)
-                {   r++;
-                    median = median + neighborhood[i]/r;
-                }
-            }
-            
-            let filteredPixelIndex = y * width * 4 + x * 4;
-            filteredData[filteredPixelIndex] = data[filteredPixelIndex];//median;
-            filteredData[filteredPixelIndex + 1] = data[filteredPixelIndex+1]; //median;
-            filteredData[filteredPixelIndex + 2] = data[filteredPixelIndex+2];//median;
-            filteredData[filteredPixelIndex + 3] = 255;
-            }
-        }
-        return filteredImageData;
-        }
-
-    medianFilterV2(imageData) 
-    {
         const data = imageData.data;
         const width = imageData.width;
         const height = imageData.height;
@@ -422,73 +360,58 @@ class Morphing
         return result;
         }
 
-    meanFilter(imageData) 
-    {
+        removeWhiteLines(imageData) {
             const data = imageData.data;
             const width = imageData.width;
             const height = imageData.height;
-            const result = new ImageData(width, height);
-
+          
+            // Definiere eine Funktion, um den Farbwert eines Pixels an einer bestimmten Position zu erhalten
+            function getPixelColor(x, y) {
+              const index = (y * width + x) * 4;
+              const red = data[index];
+              const green = data[index + 1];
+              const blue = data[index + 2];
+              const alpha = data[index + 3];
+              return { r: red, g: green, b: blue, a: alpha };
+            }
+          
+            // Definiere eine Funktion, um den nächsten nicht-weißen Pixel in der Umgebung zu finden
+            function findNonWhitePixel(x, y) {
+              const radius = 5; // Umkreis, in dem nach dem nächsten nicht-weißen Pixel gesucht wird
+              for (let i = -radius; i <= radius; i++) {
+                for (let j = -radius; j <= radius; j++) {
+                  const nx = x + i;
+                  const ny = y + j;
+                  if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                    continue; // ignoriere Pixel außerhalb des Bildes
+                  }
+                  const color = getPixelColor(nx, ny);
+                  if (color.r !== 255 || color.g !== 255 || color.b !== 255) {
+                    return color; // gib den Farbwert des ersten gefundenen nicht-weißen Pixels zurück
+                  }
+                }
+              }
+              return null; // kein nicht-weißer Pixel gefunden
+            }
+          
+            // Iteriere über alle Pixel im Bild
             for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                const index = (y * width + x) * 4;
-                const values = [];
-                for (let j = -1; j <= 1; j++) {
-                    for (let i = -1; i <= 1; i++) {
-                    if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height) {
-                        const neighborIndex = (y + j) * width + x + i;
-                        if (data[neighborIndex * 4] !== 255 || data[neighborIndex * 4 + 1] !== 255 || data[neighborIndex * 4 + 2] !== 255) {
-                        values.push(data[neighborIndex * 4]);
-                        values.push(data[neighborIndex * 4 + 1]);
-                        values.push(data[neighborIndex * 4 + 2]);
-                        }
-                    }
-                    }
+              for (let x = 0; x < width; x++) {
+                const color = getPixelColor(x, y);
+                if (color.r === 255 && color.g === 255 && color.b === 255) {
+                  const newColor = findNonWhitePixel(x, y);
+                  if (newColor) {
+                    // Ersetze den weißen Pixel durch den Farbwert des nächsten nicht-weißen Pixels
+                    const index = (y * width + x) * 4;
+                    data[index] = newColor.r;
+                    data[index + 1] = newColor.g;
+                    data[index + 2] = newColor.b;
+                  }
                 }
-                const average = values.reduce((a, b) => a + b, 0) / values.length;
-                result.data[index] = average;
-                result.data[index + 1] = average;
-                result.data[index + 2] = average;
-                result.data[index + 3] = 255;
-                }
+              }
             }
-            return result;
-            }
-
-    meanFilterV2(imageData) {
-        const data = imageData.data;
-        const width = imageData.width;
-        const height = imageData.height;
-        const result = new ImageData(width, height);
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-            const index = (y * width + x) * 4;
-            const redValues = [];
-            const greenValues = [];
-            const blueValues = [];
-            for (let j = -1; j <= 1; j++) {
-                for (let i = -1; i <= 1; i++) {
-                if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height) {
-                    const neighborIndex = (y + j) * width + x + i;
-                    if (data[neighborIndex * 4] !== 255 || data[neighborIndex * 4 + 1] !== 255 || data[neighborIndex * 4 + 2] !== 255 || data[neighborIndex * 4] !== 254 || data[neighborIndex * 4 + 1] !== 254 || data[neighborIndex * 4 + 2] !== 254) {
-                    redValues.push(data[neighborIndex * 4]);
-                    greenValues.push(data[neighborIndex * 4 + 1]);
-                    blueValues.push(data[neighborIndex * 4 + 2]);
-                    }
-                }
-                }
-            }
-            const redAverage = redValues.reduce((a, b) => a + b, 0) / redValues.length;
-            const greenAverage = greenValues.reduce((a, b) => a + b, 0) / greenValues.length;
-            const blueAverage = blueValues.reduce((a, b) => a + b, 0) / blueValues.length;
-            result.data[index] = redAverage;
-            result.data[index + 1] = greenAverage;
-            result.data[index + 2] = blueAverage;
-            result.data[index + 3] = 255;
-            }
+            // Gib das gefilterte ImageData-Objekt zurück
+            return imageData;
         }
-
-        return result;
-        }
+          
 }
