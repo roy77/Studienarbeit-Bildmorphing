@@ -16,10 +16,13 @@ class Morphing
     }
 
     //Initialisierung der Klasse
-    init(TransformationsCanvasID, maskCanvasID, width, height)
+    init(TransformationsCanvasID, maskCanvasID, width, height, QuellPunkte, ZielPunkte)
     {
         this.width = width;
         this.height = height;
+        this.QuellpunkteM = [...QuellPunkte]; 
+        this.ZielpunkteM = [...ZielPunkte];
+        console.log(this.QuellpunkteM, QuellPunkte)
 
         //TransformationsCanvas wird verwendet für die Zwischentransformation, kann ausgeblendet werden
         this.TransformationsCanvas = document.getElementById(TransformationsCanvasID);
@@ -41,22 +44,22 @@ class Morphing
     }
 
     //Übertragung der Daten aus den anderen BildBoxen
-    uebertragen(canvasID,PunkteAusBildBox,BildAusBildBox,TeilverhältnisAusBoxen) 
+    uebertragen(canvasID,PunkteAusBildBox,TeilverhältnisAusBoxen) 
     {
         this.teilverhältnis = TeilverhältnisAusBoxen;
 
         if(canvasID == 'QuellCanvas')
         {
-            this.QuellpunkteM = [...PunkteAusBildBox]; //this.deepCopy(PunkteAusBildBox); 
+            this.QuellpunkteM = [...PunkteAusBildBox]; 
         }
         
         if(canvasID == 'ZielCanvas')
         {
-            this.ZielpunkteM = [...PunkteAusBildBox]; //this.deepCopy(PunkteAusBildBox); 
+            this.ZielpunkteM = [...PunkteAusBildBox];  
         }
     }
 
-    NetzInterpolation(Quellpunkte, Zielpunkte,  n)
+    NetzInterpolation(Quellpunkte, Zielpunkte, n)
     {   var nz = n; 
         nz++;
         var rx=0;
@@ -213,7 +216,7 @@ class Morphing
         this.TransformationCtx.clearRect(0,0,this.width, this.height);
         this.maskCtx.clearRect(0, 0, this.width, this.height);
 
-        let src1 = cv.imread(this.maskCanvas)
+        let src1 = cv.imread(this.maskCanvas);
         let dsrc = new cv.Mat();
 
         //Bildausschnitte zum Gesamtbild aufaddieren 
@@ -231,6 +234,7 @@ class Morphing
         let gefilterteBilddaten = new ImageData(this.width, this.height);
         Bilddaten = this.maskCtx.getImageData(0,0,this.width,this.height);
         gefilterteBilddaten = this.WeißePixelManipulieren(Bilddaten);
+
         this.maskCtx.putImageData(Bilddaten,0,0);
         transformiertesBild = cv.imread(this.maskCanvas);
         
@@ -238,33 +242,15 @@ class Morphing
     }
    
     WeißePixelManipulieren(pixel)
-    {   var pixeldata = pixel.data
+    {   var pixeldata = pixel.data;
         for(let i=0; i<pixeldata.length; i+=4)
         { 
-            // if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) && ((pixeldata[i+20]>254 || pixeldata[i+21]>254 || pixeldata[i+22]>254)))
-            // {   
-            //     //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-            //     pixeldata[i] = pixeldata[i+12-4*this.width];     // red -1*4*this.width
-            //     pixeldata[i + 1] = pixeldata[i+13-4*this.width]; // green
-            //     pixeldata[i + 2] = pixeldata[i+14-4*this.width]; // blue
-            //     pixeldata[i + 3] = 255; 
-            // }
-
-            // if((pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254) &&((pixeldata[i+4]>254 || pixeldata[i+5]>254 || pixeldata[i+6]>254)))
-            // {   
-            //     //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-            //     pixeldata[i] = pixeldata[i+12];     // red -1*4*this.width
-            //     pixeldata[i + 1] = pixeldata[i+13]; // green
-            //     pixeldata[i + 2] = pixeldata[i+14]; // blue
-            //     pixeldata[i + 3] = 255; 
-            // }
-
             if(pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254)
             {   
-                //Den Wert des Pixels übernehmen, der zwei oben und zwei nach rechts geschoben ist
-                pixeldata[i] = pixeldata[i+4-8*this.width];     // red -1*4*this.width
-                pixeldata[i + 1] = pixeldata[i+5-8*this.width]; // green
-                pixeldata[i + 2] = pixeldata[i+6-8*this.width]; // blue
+                //Den Pixelwert übernehmen, der zwei oben und eins nach rechts positioniert ist
+                pixeldata[i] = pixeldata[i+4-8*this.width];     // rot
+                pixeldata[i + 1] = pixeldata[i+5-8*this.width]; // grün
+                pixeldata[i + 2] = pixeldata[i+6-8*this.width]; // blau
                 pixeldata[i + 3] = 255; 
             }
         }
@@ -288,7 +274,7 @@ class Morphing
                 for (let i = -1; i <= 1; i++) {
                 if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height) {
                     const neighborIndex = (y + j) * width + x + i;
-                    if (data[neighborIndex * 4] !== 255 || data[neighborIndex * 4 + 1] !== 255 || data[neighborIndex * 4 + 2] !== 255)//|| data[neighborIndex * 4] !== 254 )//|| data[neighborIndex * 4 + 1] !== 254 || data[neighborIndex * 4 + 2] !== 254) 
+                    if (data[neighborIndex * 4] !== 255 || data[neighborIndex * 4 + 1] !== 255 || data[neighborIndex * 4 + 2] !== 255) 
                     {
                     redValues.push(data[neighborIndex * 4]);
                     greenValues.push(data[neighborIndex * 4 + 1]);
@@ -362,7 +348,6 @@ class Morphing
                 }
               }
             }
-            // Gib das gefilterte ImageData-Objekt zurück
             return imageData;
         }
 

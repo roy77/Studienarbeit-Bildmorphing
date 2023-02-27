@@ -51,12 +51,13 @@
 </header>
 <body>
 <h1 class="top-centered">Bildmorphing Demonstrator</h1>
-<div class="bottom-right">© Thomas Hennefeld</div>
-<img  src="DHBW_Logo.jpg" alt="DHBW Logo" title="DHBW" width="150" class='top-right' >
+<!--<div class="bottom-right">© Thomas Hennefeld</div>-->
+<a class="bottom-right" href="https://github.com/ThomasHennefeld/Studienarbeit-Bildmorphing">Autor: Thomas Hennefeld</a>
+<img  src="DHBW_Logo.jpg" alt="DHBW Logo" title="Wer das findet bekommt 10 Bitcoins" width="150" class='top-right' >
 <div>  
     <!--Canvas-Elemente-->  
-    <canvas id="QuellCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Quellbild" ></canvas>   
-    <canvas id="ZielCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Zielbild"></canvas> 
+    <canvas id="QuellCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Thomas Hennefeld" ></canvas>   
+    <canvas id="ZielCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Viktor Trott"></canvas> 
     <canvas id="TransformationsCanvas"  style="border:2px solid #000000;"></canvas>
     <canvas id="maskCanvas"  style="border:2px solid #000000;"></canvas>
     <canvas id="Ausgabecanvas"  style="border:2px solid  #000000; display:none"></canvas>
@@ -85,7 +86,7 @@
 <p>Zwischenbilder: <span id="sliderValue2"></span></p>
 
 <button type="button1" id="btn1" onclick="MorphingDurchführen()">Morphing starten</button>
-
+<!--<button type="button2" id="btn2" onclick="KoordinatenAbspeichern()">Koordinaten abspeichern</button>-->
 <!-- JavaScript-Dateien einbinden-->
 <script src="opencv.js" type="text/javascript"></script>
 <script src="Punkt_Klasse.js"></script>
@@ -102,6 +103,12 @@
     var Ergebniscanvas = [];
     var Gewichtung = [0.25, 0.5, 0.75];
     var scale = 2;
+
+    //Koordinaten sind im x,y-Format gespeichert
+    var QuellStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 68,73, 114,75, 168,75, 233,79.75, 0,159.5, 83,165,
+    120,168, 157,168, 233,159.5, 0,239.25, 85,243, 125,245, 158,241, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319]; 
+    var ZielStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 56,61, 105,67, 154,56, 233,79.75, 0,159.5, 63,147,
+    99,144, 147,144, 233,159.5, 0,239.25, 76,235, 101,237, 131,233, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319];
 
     var Ausgabecanvas = document.getElementById('Ausgabecanvas');
     var AusgabeCtx = Ausgabecanvas.getContext('2d');
@@ -129,8 +136,8 @@
     let BildBox1= new BildBox();
     let BildBox2= new BildBox();
     //Bilder müssen die gleiche Größe haben
-    BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png');
-    BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png');
+    BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png', QuellStartKoordinaten);
+    BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png', ZielStartKoordinaten);
     
     if(BildBox1.bild.width == BildBox2.bild.width && BildBox1.bild.height == BildBox2.bild.height)
     {
@@ -139,7 +146,7 @@
     }
 
     //Morphing1 erstellen und initialisieren 
-    let Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', width*scale, height*scale);
+    let Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', width*scale, height*scale, BildBox1.Punkte, BildBox2.Punkte);
 
     //initiale Übergabe der Startbildpunkte, um Morphing zu starten
     //-> nicht sinnvoll, da lange Laufzeit
@@ -148,15 +155,8 @@
     addEventListener('Uebergabe', function (e) 
     {
         let info=e.detail;
-        Morphing1.uebertragen(info.sender, info.Punkte, info.Bild, info.teilverhältnis);
+        Morphing1.uebertragen(info.sender, info.Punkte, info.teilverhältnis);
     }, false);
-
-    //Event zum Starten des Morphing
-    addEventListener('MorphingStart', function (e) 
-    {
-        StartbedingungPrüfen();
-    }, false);
-
 
     //Slider1 für die Ergebniscanvas
     slider1.oninput = function() 
@@ -164,7 +164,7 @@
         output1.innerHTML = this.value; 
         Ausgabecanvas.style.display = 'inline';
         AusgabeCtx.clearRect(0,0,width*scale,height*scale);
-        cv.imshow(Ausgabecanvas, Morphs[output1.innerHTML])            
+        cv.imshow(Ausgabecanvas, Morphs[output1.innerHTML]);            
     }
 
     //Slider2 für die Zwischencanvas
@@ -179,28 +179,10 @@
         cv.imshow(Ausgabecanvas, transformierteZielbilder[output2.innerHTML-4]);     
     }
 
-    //Funktionen
-    function StartbedingungPrüfen()
-    {
-        var MouseUpZählerQ;
-        var MouseUpZählerZ;
-
-        let info=e.detail;
-        if(info.sender == "QuellCanvas")
-        {
-            MouseUpZählerQ = info.MouseUpZähler;
-        }
-
-        if(info.sender == "ZielCanvas")
-        {
-            MouseUpZählerZ = info.MouseUpZähler;
-        }
-
-
-    }
     function MorphingDurchführen()
     {   
         //Netzinterpolation
+        console.log(Morphing1.QuellpunkteM)
         var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, n);
 
         //Netze skalieren
@@ -208,12 +190,12 @@
         Morphing1.ZielpunkteM = NetzeSkalieren(Morphing1.ZielpunkteM, scale);
         for(let i=0; i<3;i++)
         {
-            Zwischenpunkte[i] = NetzeSkalieren(Zwischenpunkte[i], scale)
+            Zwischenpunkte[i] = NetzeSkalieren(Zwischenpunkte[i], scale);
         }
 
         //Bilder skalieren
-        BildBox1.bildMat = BilderSkalieren(BildBox1.bild, scale)
-        BildBox2.bildMat = BilderSkalieren(BildBox2.bild, scale)
+        BildBox1.bildMat = BilderSkalieren(BildBox1.bild, scale);
+        BildBox2.bildMat = BilderSkalieren(BildBox2.bild, scale);
 
         //Transformationen
         //Beim ersten Morphing darf nicht der Canvas sondern das Bild eingelesen werden, sonst wird das Netz miteingelesen 
@@ -233,7 +215,7 @@
         //Addition der Zwischenbilder
         Morphs[0] = new cv.Mat(); 
         cv.addWeighted(BildBox1.bildMat, 1, transformierteZielbilder[3], 0, 0, Morphs[0]); 
-        cv.imshow(Ergebniscanvas[0],Morphs[0])
+        cv.imshow(Ergebniscanvas[0],Morphs[0]);
 
         let j=3;
         for(let i=1; i<=3; i++)
@@ -293,6 +275,7 @@
         return resized;
     }
 
+    //Meldung einblenden, Zeit: Anzeigedauer
     function meldungEinblenden(text, zeit) 
     {
         var meldungsElement = document.getElementById("meldung");
@@ -316,7 +299,7 @@
         {
             ctx.beginPath();
             ctx.arc(Punkte[i].x, Punkte[i].y, Punkte[i].radius, 0, 2 * Math.PI);
-            ctx.fillStyle = Punkte[i].farbe
+            ctx.fillStyle = Punkte[i].farbe;
             ctx.fill();
         }
     }
@@ -355,6 +338,14 @@
         }
         return tempObj;
     }
+    
+    function KoordinatenAbspeichern()
+    {
+        let QuellStartKoordinaten = deepCopy(BildBox1.Punkte);
+        let ZielStartKoordinaten = deepCopy(BildBox2.Punkte);
+        console.log(QuellStartKoordinaten, ZielStartKoordinaten);
+    }
+    //console.log(QuellStartKoordinaten, ZielStartKoordinaten);
 </script>
            
 </body>

@@ -12,10 +12,9 @@ class BildBox
         this.canvasY;   
         this.startX;
         this.startY;
-        this.MouseUpZähler=0;
     } 
 
-    init(canvasID,imageSRC) 
+    init(canvasID,imageSRC, angepasstePunkte) 
     {
         //Canvas und Bilder initialisieren
         this.canvas = document.getElementById(canvasID);
@@ -36,6 +35,7 @@ class BildBox
         //initialer Aufruf der Netz-Zeichenfunktionen
         this.punkteerstellen(this.Punkte); 
         this.rechneKoordianten(this.Punkte);
+        this.angepassteKoordinaten(this.Punkte,angepasstePunkte);
         this.punktezeichnen(this.Punkte);
         this.gitterzeichnen();
         
@@ -58,16 +58,6 @@ class BildBox
                 this.Punkte[i].wirdGezogen = false;
             } 
         }
-        
-        dispatchEvent(new CustomEvent('MorphingStart', 
-        {   
-            //Übergabeinformationen definieren
-            detail:
-            {
-                sender: this.canvas.id,
-                zähler: this.MouseUpZähler  
-            }
-        }));
     }
 
     // onmouseout()
@@ -133,11 +123,22 @@ class BildBox
 
     }
 
-        //Funktionen
+    //Funktionen
+    //Array mit Objekten der Klasse Punkt erstellen
+    punkteerstellen(Punkte)
+    {
+        for(let i=1;i<=Math.pow(this.teilverhältnis+1,2);i++)
+        { 
+            Punkte[i] = new Punkt;
+            Punkte[i].nummer=i;
+        }
+        return Punkte;
+    }
+
     //Bildkoordinaten anhand von Bildmaßen und Teilververhältnis für die Punkte errechnen
     rechneKoordianten(Punkte)
     {       
-        for(let i=1;i<=(this.teilverhältnis+1)*(this.teilverhältnis+1);i++)
+        for(let i=1;i<=25;i++)
         {    
             if(this.xz >= this.teilverhältnis + 1)
             {
@@ -152,13 +153,17 @@ class BildBox
         return this;
     }
 
-    //Array mit Objekten der Klasse Punkt erstellen
-    punkteerstellen(Punkte)
-    {
-        for(let i=1;i<=Math.pow(this.teilverhältnis+1,2);i++)
-        { 
-            Punkte[i] = new Punkt;
-            Punkte[i].nummer=i;
+    angepassteKoordinaten(Punkte, angepasstePunkte)
+    { 
+        let r=0;
+        let k=1;
+        for(let i=1; i<25; i++)
+        {   
+
+            Punkte[i].x = angepasstePunkte[r];
+            Punkte[i].y = angepasstePunkte[k];
+            r+=2;
+            k+=2;
         }
         return Punkte;
     }
@@ -170,7 +175,7 @@ class BildBox
         {
             this.ctx.beginPath();
             this.ctx.arc(Punkte[i].x, Punkte[i].y, Punkte[i].radius, 0, 2 * Math.PI);
-            this.ctx.fillStyle = Punkte[i].farbe
+            this.ctx.fillStyle = Punkte[i].farbe;
             this.ctx.fill();
         }
     } 
@@ -184,7 +189,7 @@ class BildBox
             {
                 this.ctx.strokeStyle = 'black';
                 this.ctx.lineWidth = 0;
-                this.ctx.moveTo(this.Punkte[i].x, this.Punkte[i].y)
+                this.ctx.moveTo(this.Punkte[i].x, this.Punkte[i].y);
                 this.ctx.lineTo(this.Punkte[i+1].x, this.Punkte[i+1].y);
                 this.ctx.stroke();
             }
@@ -193,7 +198,7 @@ class BildBox
         for(let i=1; i<=(Math.pow(this.teilverhältnis+1,2))-this.teilverhältnis-1; i++)
         {
             {
-                this.ctx.moveTo(this.Punkte[i].x, this.Punkte[i].y)
+                this.ctx.moveTo(this.Punkte[i].x, this.Punkte[i].y);
                 this.ctx.lineTo(this.Punkte[i+this.teilverhältnis+1].x, this.Punkte[i+this.teilverhältnis+1].y);
                 this.ctx.stroke();
             }
