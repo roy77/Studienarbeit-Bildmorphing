@@ -20,11 +20,11 @@ class Morphing
     {
         this.width = width;
         this.height = height;
+        //Punkte initial übertragen, damit Morphing auch ohne Mausbewegung gestartet werden kann
         this.QuellpunkteM = [...QuellPunkte]; 
         this.ZielpunkteM = [...ZielPunkte];
-        console.log(this.QuellpunkteM, QuellPunkte)
 
-        //TransformationsCanvas wird verwendet für die Zwischentransformation, kann ausgeblendet werden
+        //TransformationsCanvas wird für die Zwischentransformation verwendet, kann ausgeblendet werden
         this.TransformationsCanvas = document.getElementById(TransformationsCanvasID);
         this.TransformationsCanvas.style.display="none";  
         this.TransformationCtx = this.TransformationsCanvas.getContext('2d');
@@ -32,7 +32,7 @@ class Morphing
         this.TransformationsCanvas.width = this.width;
         this.TransformationsCanvas.height = this.height;
 
-        //maskCanvas wird für das Isolieren und abspeichern der Bildsegmente verwendet
+        //maskCanvas wird für das Isolieren und Abspeichern der Bildsegmente verwendet
         this.maskCanvas = document.getElementById(maskCanvasID);
         this.maskCanvas.style.display="none";  
         this.maskCtx = this.maskCanvas.getContext('2d');
@@ -43,7 +43,7 @@ class Morphing
         return this;
     }
 
-    //Übertragung der Daten aus den anderen BildBoxen
+    //Übertragung der Daten aus den BildBoxen
     uebertragen(canvasID,PunkteAusBildBox,TeilverhältnisAusBoxen) 
     {
         this.teilverhältnis = TeilverhältnisAusBoxen;
@@ -60,40 +60,42 @@ class Morphing
     }
 
     NetzInterpolation(Quellpunkte, Zielpunkte, n)
-    {   var nz = n; 
-        nz++;
-        var rx=0;
-        var ry=0;
-        var xv;
-        var yv;
-        var Zwischenpunkte = []; 
-        var kZwischenpunkte = this.deepCopy(Quellpunkte); 
-        for(let k=0; k<n; k++)
-        {   rx++; 
-            ry++;
-            for(let i=1; i<=25; i++)
-            {   
-                xv = Quellpunkte[i].x;
-                yv = Quellpunkte[i].y;
-                //Interpolationsrichtung bestimmen
-                if(Quellpunkte[i].x > Zielpunkte[i].x)
-                    rx = -rx;
-                if(Quellpunkte[i].y > Zielpunkte[i].y)
-                    ry = -ry;
+    {   
+      var nz = n; 
+      nz++;
+      var rx=0;
+      var ry=0;
+      var xv;
+      var yv;
+      var Zwischenpunkte = []; 
+      var kZwischenpunkte = this.deepCopy(Quellpunkte); 
+      for(let k=0; k<n; k++)
+      {   rx++; 
+          ry++;
+          for(let i=1; i<=25; i++)
+          {   
+            xv = Quellpunkte[i].x;
+            yv = Quellpunkte[i].y;
+            //Interpolationsrichtung bestimmen
+            if(Quellpunkte[i].x > Zielpunkte[i].x)
+                rx = -rx;
+            if(Quellpunkte[i].y > Zielpunkte[i].y)
+                ry = -ry;
 
                 kZwischenpunkte[i].x = xv + rx * (Math.abs(Quellpunkte[i].x - Zielpunkte[i].x) / (nz));
                 kZwischenpunkte[i].y = yv + ry * (Math.abs(Quellpunkte[i].y - Zielpunkte[i].y) / (nz));
                 
-                if(rx<0)
-                    rx = -rx;
-                if(ry<0)
-                    ry = -ry;          
-            }
-            Zwischenpunkte[k] = this.deepCopy(kZwischenpunkte);
-        } 
-        return Zwischenpunkte;
-    }
+            if(rx<0)
+                rx = -rx;
+            if(ry<0)
+                ry = -ry;          
+          }
+        Zwischenpunkte[k] = this.deepCopy(kZwischenpunkte);
+      } 
+    return Zwischenpunkte;
+  }
 
+    //Transformation der einzelnen Ausschnitte
     transformiereAusschnitte(Quellpunkte, Zielpunkte, src)
     {  
         let transformiertesBild; 
@@ -192,7 +194,7 @@ class Morphing
         //Transformation durchführen
         cv.warpAffine(src, dst, kernel, new cv.Size(this.width, this.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
         cv.imshow(this.TransformationsCanvas, dst);	
-       // src.delete();
+        //src.delete();
         dst.delete();
 
         //Dreieck zur Maskierung zeichnen
@@ -235,7 +237,7 @@ class Morphing
         Bilddaten = this.maskCtx.getImageData(0,0,this.width,this.height);
         gefilterteBilddaten = this.WeißePixelManipulieren(Bilddaten);
 
-        this.maskCtx.putImageData(Bilddaten,0,0);
+        this.maskCtx.putImageData(gefilterteBilddaten,0,0);
         transformiertesBild = cv.imread(this.maskCanvas);
         
         return transformiertesBild;
@@ -257,6 +259,7 @@ class Morphing
         return pixel;
     }    
     
+    //Medianfilter hat keine guten Ergebnisse geliefert
     medianFilter(imageData) 
     {
         const data = imageData.data;
@@ -298,60 +301,7 @@ class Morphing
         return result;
         }
 
-        removeWhiteLines(imageData) {
-            const data = imageData.data;
-            const width = imageData.width;
-            const height = imageData.height;
-          
-            // Definiere eine Funktion, um den Farbwert eines Pixels an einer bestimmten Position zu erhalten
-            function getPixelColor(x, y) {
-              const index = (y * width + x) * 4;
-              const red = data[index];
-              const green = data[index + 1];
-              const blue = data[index + 2];
-              const alpha = data[index + 3];
-              return { r: red, g: green, b: blue, a: alpha };
-            }
-          
-            // Definiere eine Funktion, um den nächsten nicht-weißen Pixel in der Umgebung zu finden
-            function findNonWhitePixel(x, y) {
-              const radius = 5; // Umkreis, in dem nach dem nächsten nicht-weißen Pixel gesucht wird
-              for (let i = -radius; i <= radius; i++) {
-                for (let j = -radius; j <= radius; j++) {
-                  const nx = x + i;
-                  const ny = y + j;
-                  if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-                    continue; // ignoriere Pixel außerhalb des Bildes
-                  }
-                  const color = getPixelColor(nx, ny);
-                  if (color.r !== 255 || color.g !== 255 || color.b !== 255) {
-                    return color; // gib den Farbwert des ersten gefundenen nicht-weißen Pixels zurück
-                  }
-                }
-              }
-              return null; // kein nicht-weißer Pixel gefunden
-            }
-          
-            // Iteriere über alle Pixel im Bild
-            for (let y = 0; y < height; y++) {
-              for (let x = 0; x < width; x++) {
-                const color = getPixelColor(x, y);
-                if (color.r === 255 && color.g === 255 && color.b === 255) {
-                  const newColor = findNonWhitePixel(x, y);
-                  if (newColor) {
-                    // Ersetze den weißen Pixel durch den Farbwert des nächsten nicht-weißen Pixels
-                    const index = (y * width + x) * 4;
-                    data[index] = newColor.r;
-                    data[index + 1] = newColor.g;
-                    data[index + 2] = newColor.b;
-                  }
-                }
-              }
-            }
-            return imageData;
-        }
-
-    //Hilfsfunktionen für die tiefe Arraykopie
+    //Hilfsfunktionen für tiefes Arraykopieren
     deepCopy(arr)
     {
         let copy = [];

@@ -1,10 +1,10 @@
 class BildBox
-{
+{ 
     constructor()
     {
         this.bild = new Image();
         this.bildMat;
-        this.teilverhältnis = 4; //nicht verändern, Code nicht für andere Teilverhältnisse ausgelegt
+        this.teilverhältnis = 4; //nicht verändern, Code nur bedingt für andere Teilverhältnisse ausgelegt
         this.xz=0;
         this.yz=0;
         this.Punkte = [];
@@ -12,6 +12,7 @@ class BildBox
         this.canvasY;   
         this.startX;
         this.startY;
+
     } 
 
     init(canvasID,imageSRC, angepasstePunkte) 
@@ -135,7 +136,7 @@ class BildBox
         return Punkte;
     }
 
-    //Bildkoordinaten anhand von Bildmaßen und Teilververhältnis für die Punkte errechnen
+    //Bildkoordinaten anhand von Bildmaßen für die Punkte errechnen
     rechneKoordianten(Punkte)
     {       
         for(let i=1;i<=25;i++)
@@ -153,13 +154,14 @@ class BildBox
         return this;
     }
 
+    //Startkoordinaten für die Gesichter übertragen
     angepassteKoordinaten(Punkte, angepasstePunkte)
     { 
         let r=0;
         let k=1;
         for(let i=1; i<25; i++)
         {   
-
+            //Koordinaten im x-, y-Format abgelegt
             Punkte[i].x = angepasstePunkte[r];
             Punkte[i].y = angepasstePunkte[k];
             r+=2;
@@ -168,7 +170,7 @@ class BildBox
         return Punkte;
     }
 
-    //Punkte in den Canvas einzeichnen
+    //Punkte einzeichnen
     punktezeichnen(Punkte)
     {
         for(let i=1; i<=Math.pow(this.teilverhältnis+1,2); i++)
@@ -232,10 +234,11 @@ class BildBox
         }
     }
 
-    //Bild in Canvas einzeichnen
+    //Bild zeichnen
     bildzeichnen()
     { 
-        this.ctx.drawImage(this.bild,1, 1, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(this.bild,0, 0, this.canvas.width, this.canvas.height);
+        //Bildmatrix für die Transformation einlesen
         this.bildMat = new cv.Mat();
         this.bildMat = cv.imread(this.canvas);
         this.punktezeichnen(this.Punkte);
