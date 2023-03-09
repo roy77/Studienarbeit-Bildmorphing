@@ -51,9 +51,8 @@
 </header>
 <body>
 <h1 class="top-centered">Bildmorphing Demonstrator</h1>
-<!--<div class="bottom-right">© Thomas Hennefeld</div>-->
 <a class="bottom-right" href="https://github.com/ThomasHennefeld/Studienarbeit-Bildmorphing">Autor: Thomas Hennefeld</a>
-<img  src="DHBW_Logo.jpg" alt="DHBW Logo" title="Muss net schmecke" width="150" class='top-right' >
+<img  src="DHBW_Logo.jpg" alt="DHBW Logo" title="DHBW" width="150" class='top-right' >
 <div>  
     <!--Canvas-Elemente-->  
     <canvas id="QuellCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Thomas Hennefeld" ></canvas>   
@@ -79,8 +78,7 @@
 <p>Zwischenbilder: <span id="sliderValue2"></span></p>
 
 <button type="button1" id="btn1" onclick="MorphingDurchführen()">Morphing</button>
-<button type="button2" id="btn2" onclick="Gesichtserkennung()">Gesichterkennung</button>
-
+<!--<button type="button2" id="btn2" onclick="Gesichtserkennung()">Gesichterkennung</button>-->
 <!--<button type="button2" id="btn2" onclick="KoordinatenAbspeichern()">Koordinaten abspeichern</button>-->
 
 <!-- JavaScript-Dateien einbinden-->
@@ -96,13 +94,13 @@
     loadOpenCV(meldungEinblenden);
 
     //Deklaration
-    var n=3; //n: Anzahl Zwischennetze
+    var n=3; //Anzahl Zwischennetze
     var transformierteQuellbilder = [];
     var transformierteZielbilder = [];
     var Morphs = [];
     var Zwischencanvas = [];
     var Ergebniscanvas = [];
-    var Gewichtung = [0.25, 0.5, 0.75];
+    var Gewichtung = [0.25, 0.5, 0.75]; //Gewichtungsvektor für die Bildüberlagerung
     var scale = 2; //Skalierungsfaktor für die Transformation und Ausgabe -> geht quadratisch in die Laufzeit ein!
 
     //Koordinaten sind im x,y-Format gespeichert
@@ -123,7 +121,6 @@
     output2.innerHTML = slider2.value;
     
     //Namensdeklaration der Canvas
-
     for(let i=0; i<=5; i++)
     {
         Ergebniscanvas[i] = "Ergebniscanvas_" + i;
@@ -145,8 +142,7 @@
     //Morphing1 erstellen und initialisieren 
     let Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', width*scale, height*scale, BildBox1.Punkte, BildBox2.Punkte);
 
-    //Morphing initial starten
-    //-> nicht sinnvoll, da lange Laufzeit
+    //Morphing initial starten -> nicht sinnvoll, da lange Laufzeit
 
     //Uebergabe-Event auffangen und Daten an Morphing1 übergeben
     addEventListener('Uebergabe', function (e) 
@@ -196,15 +192,15 @@
         BildBox2.bildMat = BilderSkalieren(BildBox2.bild, scale);
 
         //Transformationen
-        //Beim ersten Morphing darf nicht der Canvas sondern das Bild eingelesen werden, sonst wird das Netz miteingelesen 
+        //Beim ersten Morphing darf nicht der Canvas sondern muss das Bild eingelesen werden, sonst wird das Netz miteingelesen 
         //Bei den folgenden ist es egal
-        //Quell -> Ziel
+        //Quellbild -> Zielbild
         transformierteQuellbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[0], BildBox1.bildMat);
         transformierteQuellbilder[1] = Morphing1.transformiereAusschnitte(Zwischenpunkte[0], Zwischenpunkte[1], transformierteQuellbilder[0]);
         transformierteQuellbilder[2] = Morphing1.transformiereAusschnitte(Zwischenpunkte[1], Zwischenpunkte[2], transformierteQuellbilder[1]);
         transformierteQuellbilder[3] = Morphing1.transformiereAusschnitte(Zwischenpunkte[2], Morphing1.ZielpunkteM, transformierteQuellbilder[2]);
 
-        //Ziel -> Quell 
+        //Zielbild -> Quellbild 
         transformierteZielbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[2], BildBox2.bildMat);
         transformierteZielbilder[1] = Morphing1.transformiereAusschnitte(Zwischenpunkte[2], Zwischenpunkte[1], transformierteZielbilder[0]);
         transformierteZielbilder[2] = Morphing1.transformiereAusschnitte(Zwischenpunkte[1], Zwischenpunkte[0], transformierteZielbilder[1]);
@@ -230,10 +226,10 @@
 
         //Bilddatei zur weiteren Untersuchung exportieren
         //cv.imshow(Exportcanvas,transformierteQuellbilder[0])
-        // const link = document.createElement('a');
-        // link.download = 'image.png';
-        // link.href = Exportcanvas.toDataURL('image/png');
-        // link.click();
+        //const link = document.createElement('a');
+        //link.download = 'image.png';
+        //link.href = Exportcanvas.toDataURL('image/png');
+        //link.click();
 
         Ausgabecanvas.style.display = 'inline';
         cv.imshow(Ausgabecanvas, Morphs[2]);
@@ -351,10 +347,6 @@
             document.head.appendChild(script);
         } 
     }
-    
-
-
-</script>
-           
+</script>       
 </body>
 </html>

@@ -42,7 +42,6 @@ class BildBox
         
         //Evente definieren
         this.canvas.addEventListener('mouseup', this.onmouseup.bind(this)); 
-        //this.canvas.addEventListener('mouseout', this.onmouseout.bind(this)); 
         this.canvas.addEventListener('mousedown', this.onmousedown.bind(this));
         this.canvas.addEventListener('mousemove', this.onmousemove.bind(this));        
     }
@@ -60,17 +59,6 @@ class BildBox
             } 
         }
     }
-
-    // onmouseout()
-    // { 
-    //     for(let i=1; i< this.Punkte.length; i++)
-    //     {
-    //         if (this.Punkte[i].wirdGezogen)
-    //         {
-    //             this.Punkte[i].wirdGezogen = false;
-    //         }
-    //     } 
-    // }
   
     onmousedown()
     {   
@@ -121,7 +109,6 @@ class BildBox
                 teilverhältnis :this.teilverhältnis 
             }
         })); 
-
     }
 
     //Funktionen
@@ -184,7 +171,8 @@ class BildBox
 
     //Punkte zu Gitter verbinden
     gitterzeichnen()
-    {   //horizontal
+    {   
+        //horizontal
         for(let i=1; i<=Math.pow(this.teilverhältnis+1,2); i++)
         {
             if(this.Punkte[i].nummer % (this.teilverhältnis+1) != 0 )
@@ -196,6 +184,7 @@ class BildBox
                 this.ctx.stroke();
             }
         }
+
         //vertikal
         for(let i=1; i<=(Math.pow(this.teilverhältnis+1,2))-this.teilverhältnis-1; i++)
         {
@@ -234,7 +223,7 @@ class BildBox
         }
     }
 
-    //Bild zeichnen
+    //Bild einzeichnen
     bildzeichnen()
     { 
         this.ctx.drawImage(this.bild,0, 0, this.canvas.width, this.canvas.height);

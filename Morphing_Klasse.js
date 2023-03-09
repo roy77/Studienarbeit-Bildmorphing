@@ -231,7 +231,7 @@ class Morphing
         //Ergebnisbild ausgeben
         cv.imshow(this.maskCanvas,dsrc,0,0);
  
-        //Bild filtern
+        //Bilddaten filtern
         let Bilddaten = new ImageData(this.width, this.height);
         let gefilterteBilddaten = new ImageData(this.width, this.height);
         Bilddaten = this.maskCtx.getImageData(0,0,this.width,this.height);
@@ -334,6 +334,5 @@ class Morphing
           }
         }
         return tempObj;
-    }
-          
+    }         
 }

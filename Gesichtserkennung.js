@@ -19,22 +19,22 @@
 		let minSize = new cv.Size(30, 30);
 		faceCascade.detectMultiScale(grayimg, faces, scaleFactor, minNeighbors, flags, minSize);
 
-        // Landmark-Erkennung
-        // let predictor = new dlib.shape_predictor();
-        // predictor.load('shape_predictor_68_face_landmarks');
-        // let landmarks = predictor.predict(img, faces.get(0));
+        // Merkmalsextraktion
+        let predictor = new dlib.shape_predictor();
+        predictor.load('shape_predictor_68_face_landmarks.dat');
+        let landmarks = predictor.predict(img, faces.get(0));
 
-        // // Erstellen des Netz
-        // let gridPoints = [];
-        // for (let i = 0; i < 68; i++) {
-        // gridPoints.push(new cv.Point(landmarks.get(i, 0), landmarks.get(i, 1)));
-        // }
+        // Erstellen des Netz
+        let gridPoints = [];
+        for (let i = 0; i < 68; i++) {
+        gridPoints.push(new cv.Point(landmarks.get(i, 0), landmarks.get(i, 1)));
+        }
         // Verbinden der Punkte zu einem Netz
-        // for (let i = 0; i < gridPoints.length - 1; i++) {
-        // cv.line(img, gridPoints[i], gridPoints[i + 1], [255, 0, 0, 255], 2);
-        // }
+        for (let i = 0; i < gridPoints.length - 1; i++) {
+        cv.line(img, gridPoints[i], gridPoints[i + 1], [255, 0, 0, 255], 2);
+        }
 
         // Anzeigen des Ergebnisses
-        // cv.imshow('canvasOutput', img);
-        // cv.waitKey();
+        cv.imshow('canvasOutput', img);
+        cv.waitKey();
     }
