@@ -12,10 +12,13 @@ class Morphing
         this.teilverhältnis;
         this.Bildausschnitte = [];
         this.j = 1;
+        this.Morphs = [];
+        this.transformierteQuellbilder = [];
+        this.transformierteZielbilder = [];
     }
 
     //Initialisierung der Klasse
-    init(TransformationsCanvasID, maskCanvasID, QuellPunkte, ZielPunkte)
+    init(maskCanvasID, QuellPunkte, ZielPunkte)
     {
         //Punkte initial übertragen, damit Morphing auch ohne Mausbewegung gestartet werden kann
         this.QuellpunkteM = [...QuellPunkte]; 
@@ -46,41 +49,42 @@ class Morphing
         }
     }
 
-    NetzInterpolation(Quellpunkte, Zielpunkte, n)
+    NetzInterpolation(Quellpunkte, Zielpunkte, step)
     {   
-      var nz = n; 
-      nz++;
-      var rx=0;
-      var ry=0;
-      var xv;
-      var yv;
-      var Zwischenpunkte = []; 
       var kZwischenpunkte = this.deepCopy(Quellpunkte); 
-      for(let k=0; k<n; k++)
-      {   rx++; 
-          ry++;
-          for(let i=1; i<=25; i++)
-          {   
-            xv = Quellpunkte[i].x;
-            yv = Quellpunkte[i].y;
-            //Interpolationsrichtung bestimmen
-            if(Quellpunkte[i].x > Zielpunkte[i].x)
-                rx = -rx;
-            if(Quellpunkte[i].y > Zielpunkte[i].y)
-                ry = -ry;
+      for(let i=1; i<=25; i++)
+      {   
+        kZwischenpunkte[i].x = Quellpunkte[i].x *step + (1-step)* Zielpunkte[i].x;
+        kZwischenpunkte[i].y = Quellpunkte[i].y *step + (1-step)* Zielpunkte[i].y;
+      }
+      return kZwischenpunkte;
+    }
+  
+    calcMorph(bildMat1,bildMat2,n){
+        for(let i=0; i<n; i++){
+          
+          var Zwischenpunkte = this.NetzInterpolation(this.QuellpunkteM, this.ZielpunkteM, 1-i/n);
+          if(i==0) this.transformierteQuellbilder[i]=bildMat1
+          else this.transformierteQuellbilder[i] = this.transformiereAusschnitte(this.QuellpunkteM, Zwischenpunkte, bildMat1);
+          
+          if(i==(n-1)) this.transformierteZielbilder[i]=bildMat2
+          else this.transformierteZielbilder[i] = this.transformiereAusschnitte(this.ZielpunkteM, Zwischenpunkte, bildMat2);
+          this.Morphs[i] = new cv.Mat(); 
+          cv.addWeighted(this.transformierteQuellbilder[i], 1-i/n, this.transformierteZielbilder[i], i/n, 0,this.Morphs[i])         
+        } 
+    }
+    
+    getResult(index){
+      return this.Morphs[index];
+    }
 
-                kZwischenpunkte[i].x = xv + rx * (Math.abs(Quellpunkte[i].x - Zielpunkte[i].x) / (nz));
-                kZwischenpunkte[i].y = yv + ry * (Math.abs(Quellpunkte[i].y - Zielpunkte[i].y) / (nz));
-                
-            if(rx<0)
-                rx = -rx;
-            if(ry<0)
-                ry = -ry;          
-          }
-        Zwischenpunkte[k] = this.deepCopy(kZwischenpunkte);
-      } 
-    return Zwischenpunkte;
-  }
+    getSource(index){
+      return this.transformierteQuellbilder[index];
+    }
+
+    getDestination(index){
+      return this.transformierteZielbilder[index];
+    }
 
     //Transformation der einzelnen Ausschnitte
     transformiereAusschnitte(Quellpunkte, Zielpunkte, src)

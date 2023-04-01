@@ -64,16 +64,7 @@
 
 <button type="button1" id="btn1" onclick="MorphingDurchführen()">Morphing</button>
 <input type="range" min="0" max="4" value="0" class="slider" id="slider1">
-<input type="range" min="0" max="7" value="0" class="slider" id="slider2"><span id="sliderValue"></span>
-
-<div>  
-    <canvas id="Ergebniscanvas_0"  style="display:none;"></canvas>
-    <canvas id="Ergebniscanvas_1"  style="display:none;"></canvas>   
-    <canvas id="Ergebniscanvas_2"  style="display:none;"></canvas>
-    <canvas id="Ergebniscanvas_3"  style="display:none;"></canvas>   
-    <canvas id="Ergebniscanvas_4"  style="display:none;"></canvas>
-</div>
-
+<input type="range" min="0" max="9" value="0" class="slider" id="slider2"><span id="sliderValue"></span>
 
 <!--<button type="button2" id="btn2" onclick="Gesichtserkennung()">Gesichterkennung</button>-->
 <!--<button type="button2" id="btn2" onclick="KoordinatenAbspeichern()">Koordinaten abspeichern</button>-->
@@ -86,17 +77,9 @@
 <script src="opencv.js" id="opencvjs"></script> 
 
 <script>
-    //Deklaration
-    var Morphs = [];
-    var Zwischencanvas = [];
-    var Ergebniscanvas = [];
-    var Gewichtung = [0.25, 0.5, 0.75]; //Gewichtungsvektor für die Bildüberlagerung
     var Morphing1;
-    var n=3; //Anzahl Zwischennetze
     let BildBox1= new BildBox();
     let BildBox2= new BildBox();
-    var transformierteQuellbilder = [];
-    var transformierteZielbilder = [];
 
     function start()
     {   
@@ -115,18 +98,13 @@
       var output = document.getElementById("sliderValue");
       output.innerHTML = "";
       
-      //Namensdeklaration der Canvas
-      for(let i=0; i<=5; i++)
-      {
-          Ergebniscanvas[i] = "Ergebniscanvas_" + i;
-      }
 
       //Bilder müssen die gleiche Größe haben
       BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png', QuellStartKoordinaten);
       BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png', ZielStartKoordinaten);
 
       //Morphing1 erstellen und initialisieren 
-      Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', BildBox1.Punkte, BildBox2.Punkte);
+      Morphing1=(new Morphing()).init('maskCanvas', BildBox1.Punkte, BildBox2.Punkte);
 
       //Morphing initial starten -> nicht sinnvoll, da lange Laufzeit
 
@@ -142,7 +120,7 @@
       {
           output.innerHTML = "Ergebnisbild: " +this.value; 
           Ausgabecanvas.style.display = 'inline';
-          cv.imshow(Ausgabecanvas, Morphs[this.value]);            
+          cv.imshow(Ausgabecanvas, Morphing1.getResult(this.value));            
       }
 
       //Slider2 für die Zwischenbilder
@@ -150,56 +128,22 @@
       {
           output.innerHTML = "Zwischenbild: " +this.value; 
           Ausgabecanvas.style.display = 'inline';
-          if(this.value < 4)
-              cv.imshow(Ausgabecanvas, transformierteQuellbilder[this.value]);
-          if(this.value > 3 && this.value < 8)
-              cv.imshow(Ausgabecanvas, transformierteZielbilder[this.value-4]);     
+          if(this.value < 5)
+              cv.imshow(Ausgabecanvas, Morphing1.getSource(this.value));
+          if(this.value >= 5 && this.value < 10)
+              cv.imshow(Ausgabecanvas, Morphing1.getDestination(this.value-5));     
       }
     }
     
-    //Funktionen
     //Durchführung des Morphing
     function MorphingDurchführen()
-    {   
-        //Netzinterpolation
-        var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, n);
-
-        //Bilder skalieren
-        let bildMat1 = cv.imread(BildBox1.bild);
-        let bildMat2 = cv.imread(BildBox2.bild);
-
-        //Transformationen
-        transformierteQuellbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[0], bildMat1);
-        transformierteQuellbilder[1] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[1], bildMat1);
-        transformierteQuellbilder[2] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[2], bildMat1);
-        transformierteQuellbilder[3] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM,bildMat1);
-
-        //Zielbild -> Quellbild 
-        transformierteZielbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[2], bildMat2);
-        transformierteZielbilder[1] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[1], bildMat2);
-        transformierteZielbilder[2] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[0], bildMat2);
-        transformierteZielbilder[3] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Morphing1.QuellpunkteM, bildMat2);
-
-        //Addition der Zwischenbilder
-        Morphs[0] = new cv.Mat(); 
-        cv.addWeighted(bildMat1, 1, transformierteZielbilder[3], 0, 0, Morphs[0]); 
-        cv.imshow(Ergebniscanvas[0],Morphs[0]);
-
-        let j=3;
-        for(let i=1; i<=3; i++)
-        {    
-            j--;
-            Morphs[i] = new cv.Mat();
-            cv.addWeighted(transformierteQuellbilder[i-1], Gewichtung[j], transformierteZielbilder[j], Gewichtung[i-1], 0, Morphs[i]);
-            cv.imshow(Ergebniscanvas[i],Morphs[i]); 
-        }
- 
-        Morphs[4] = new cv.Mat();
-        cv.addWeighted(transformierteQuellbilder[3], 0, bildMat2, 1, 0, Morphs[4]);
-        cv.imshow(Ergebniscanvas[4],Morphs[4]);
-
-        Ausgabecanvas.style.display = 'inline';
-        cv.imshow(Ausgabecanvas, Morphs[2]);
+    {
+      let bildMat1 = cv.imread(BildBox1.bild);
+      let bildMat2 = cv.imread(BildBox2.bild);
+      Morphing1.calcMorph(bildMat1,bildMat2,5)
+        
+      Ausgabecanvas.style.display = 'inline';
+      cv.imshow(Ausgabecanvas, Morphing1.getResult(0));
 
         //Meldetext, sobald Morphing abgeschlossen, da bei großen Skalierungsfaktor lange Laufzeit
         meldungEinblenden("Morphing erfolgreich durchgeführt!", 1500);
@@ -252,14 +196,6 @@
         return tempObj;
     }
     
-    //Koordinaten abspeichern, für neue Bilder
-    function KoordinatenAbspeichern()
-    {
-        let QuellStartKoordinaten = deepCopy(BildBox1.Punkte);
-        let ZielStartKoordinaten = deepCopy(BildBox2.Punkte);
-    }
-
-    //waitOpenCV()
     cv['onRuntimeInitialized']=()=>{
       meldungEinblenden("OpenCV erfolgreich geladen!", 1500);    
       start();
