@@ -143,10 +143,10 @@
       Morphing1.calcMorph(bildMat1,bildMat2,5)
         
       Ausgabecanvas.style.display = 'inline';
-      cv.imshow(Ausgabecanvas, Morphing1.getResult(0));
+      slider1.oninput()
 
-        //Meldetext, sobald Morphing abgeschlossen, da bei großen Skalierungsfaktor lange Laufzeit
-        meldungEinblenden("Morphing erfolgreich durchgeführt!", 1500);
+      meldungEinblenden("Morphing erfolgreich durchgeführt!", 1500);
+      
     }
 
     //Meldung einblenden, Zeit: Anzeigedauer
