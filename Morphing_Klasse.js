@@ -8,7 +8,6 @@ class Morphing
         this.height;
         this.maskCanvas;
         this.maskCtx;
-        this.TransformationsCanvas;
         this.TransformationCtx;
         this.teilverhältnis;
         this.Bildausschnitte = [];
@@ -16,29 +15,17 @@ class Morphing
     }
 
     //Initialisierung der Klasse
-    init(TransformationsCanvasID, maskCanvasID, width, height, QuellPunkte, ZielPunkte)
+    init(TransformationsCanvasID, maskCanvasID, QuellPunkte, ZielPunkte)
     {
-        this.width = width;
-        this.height = height;
         //Punkte initial übertragen, damit Morphing auch ohne Mausbewegung gestartet werden kann
         this.QuellpunkteM = [...QuellPunkte]; 
         this.ZielpunkteM = [...ZielPunkte];
-
-        //TransformationsCanvas wird für die Zwischentransformation verwendet, kann ausgeblendet werden
-        this.TransformationsCanvas = document.getElementById(TransformationsCanvasID);
-        this.TransformationsCanvas.style.display="none";  
-        this.TransformationCtx = this.TransformationsCanvas.getContext('2d');
-        this.TransformationCtx.font = "16px Arial";
-        this.TransformationsCanvas.width = this.width;
-        this.TransformationsCanvas.height = this.height;
 
         //maskCanvas wird für das Isolieren und Abspeichern der Bildsegmente verwendet
         this.maskCanvas = document.getElementById(maskCanvasID);
         this.maskCanvas.style.display="none";  
         this.maskCtx = this.maskCanvas.getContext('2d');
         this.maskCtx.font = "16px Arial";
-        this.maskCanvas.width = this.width;
-        this.maskCanvas.height = this.height;
  
         return this;
     }
@@ -98,6 +85,11 @@ class Morphing
     //Transformation der einzelnen Ausschnitte
     transformiereAusschnitte(Quellpunkte, Zielpunkte, src)
     {  
+        this.width=src.cols
+        this.height=src.rows
+        this.maskCanvas.width = this.width;
+        this.maskCanvas.height = this.height;
+
         let transformiertesBild; 
         this.z1 = 0;
         this.z2 = 16;
@@ -107,7 +99,6 @@ class Morphing
         for(let z=1; z<=16; z++)
         {   
             this.maskCtx.globalCompositeOperation = "source-over";
-            this.TransformationCtx.clearRect(0,0,this.width, this.height);
             this.maskCtx.clearRect(0, 0, this.width, this.height);
 
             switch (z)
@@ -137,170 +128,103 @@ class Morphing
         let kernel = cv.getAffineTransform(srcTri, dstTri);
         //Transformation durchführen
         cv.warpAffine(src, dst, kernel, new cv.Size(this.width, this.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
-        cv.imshow(this.TransformationsCanvas, dst);		
-        //src.delete();
-        dst.delete();
 
         //Dreieck zur Maskierung zeichnen
-        this.maskCtx.lineWidth = 1;
+        this.maskCtx.lineWidth = 0;
+        this.maskCtx.fillStyle = "#FFFFFF";
         this.maskCtx.beginPath();
-        this.maskCtx.moveTo(Zielpunkte[this.j].x+1, Zielpunkte[this.j].y+1);
-        this.maskCtx.lineTo(Zielpunkte[this.j+1].x-1, Zielpunkte[this.j+1].y+1);
-        this.maskCtx.lineTo(Zielpunkte[this.j+6].x-1, Zielpunkte[this.j+6].y)-1;
+        this.maskCtx.moveTo(Zielpunkte[this.j].x, Zielpunkte[this.j].y);
+        this.maskCtx.lineTo(Zielpunkte[this.j+1].x, Zielpunkte[this.j+1].y);
+        this.maskCtx.lineTo(Zielpunkte[this.j+6].x, Zielpunkte[this.j+6].y);
         this.maskCtx.closePath();
         this.maskCtx.stroke();
         this.maskCtx.fill();
- 
-        //zur Segmentierung das Bild in die Maske zeichnen
-        this.maskCtx.globalCompositeOperation = "source-in";
-        this.maskCtx.drawImage(this.TransformationsCanvas, 0, 0);
+        let mask=cv.imread(this.maskCanvas);
+        let res = new cv.Mat();
+
+        cv.threshold(mask, mask, 1, 255, cv.THRESH_BINARY);
+        cv.cvtColor(mask, mask, cv.COLOR_RGBA2GRAY);
+        cv.bitwise_and(dst, dst, res, mask);
+        this.Bildausschnitte[this.z2] =res;
+
 
         //Segmente einlesen und abspeichern
-        this.Bildausschnitte[this.z1] = cv.imread(this.maskCanvas);
+        this.Bildausschnitte[this.z1] = res;
         }
 
         //untere Dreiecke
         this.l = 0;
         for(let z=1; z<=16; z++)
         {   
-            this.maskCtx.globalCompositeOperation = "source-over";
-            this.TransformationCtx.clearRect(0,0,this.width, this.height);
-            this.maskCtx.clearRect(0, 0, this.width, this.height);
+          this.maskCtx.globalCompositeOperation = "source-over";
+          this.maskCtx.clearRect(0, 0, this.width, this.height);
 
-            switch (z)
-            {
-                case 5:
-                    this.l+=2;
-                    break;
-                case 9:
-                    this.l+=2;
-                    break;
-        
-                case 13:
-                    this.l+=2;
-                    break;
-                default:
-                    this.l++;
-            }
-        this.z2 ++;
-            
-        //Vierpunkttransformation
-        let dst = new cv.Mat();        
-        //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
-        let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellpunkte[this.l].x, Quellpunkte[this.l].y, Quellpunkte[this.l+5].x, Quellpunkte[this.l+5].y, Quellpunkte[this.l+6].x, Quellpunkte[this.l+6].y]);
-        let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielpunkte[this.l].x, Zielpunkte[this.l].y, Zielpunkte[this.l+5].x, Zielpunkte[this.l+5].y, Zielpunkte[this.l+6].x, Zielpunkte[this.l+6].y]);
-        //Transformationsmatrix berechnen
-        let kernel = cv.getAffineTransform(srcTri, dstTri);
-        //Transformation durchführen
-        cv.warpAffine(src, dst, kernel, new cv.Size(this.width, this.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
-        cv.imshow(this.TransformationsCanvas, dst);	
-        //src.delete();
-        dst.delete();
+          switch (z)
+          {
+              case 5:
+                  this.l+=2;
+                  break;
+              case 9:
+                  this.l+=2;
+                  break;
+      
+              case 13:
+                  this.l+=2;
+                  break;
+              default:
+                  this.l++;
+          }
+          this.z2 ++;
+              
+          //Vierpunkttransformation
+          let dst = new cv.Mat();        
+          //Quell- und Zielpunkte abhängig von den Punktearrays als Eingabewerte
+          let srcTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Quellpunkte[this.l].x, Quellpunkte[this.l].y, Quellpunkte[this.l+5].x, Quellpunkte[this.l+5].y, Quellpunkte[this.l+6].x, Quellpunkte[this.l+6].y]);
+          let dstTri = cv.matFromArray(3, 1, cv.CV_32FC2, [Zielpunkte[this.l].x, Zielpunkte[this.l].y, Zielpunkte[this.l+5].x, Zielpunkte[this.l+5].y, Zielpunkte[this.l+6].x, Zielpunkte[this.l+6].y]);
+          //Transformationsmatrix berechnen
+          let kernel = cv.getAffineTransform(srcTri, dstTri);
+          //Transformation durchführen
+          cv.warpAffine(src, dst, kernel, new cv.Size(this.width, this.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());          
 
-        //Dreieck zur Maskierung zeichnen
-        this.maskCtx.lineWidth = 1;
-        this.maskCtx.beginPath();
-        this.maskCtx.moveTo(Zielpunkte[this.l].x, Zielpunkte[this.l].y);
-        this.maskCtx.lineTo(Zielpunkte[this.l+5].x, Zielpunkte[this.l+5].y);
-        this.maskCtx.lineTo(Zielpunkte[this.l+6].x, Zielpunkte[this.l+6].y);
-        this.maskCtx.closePath();
-        this.maskCtx.stroke();
-        this.maskCtx.fill();
+          //Dreieck zur Maskierung zeichnen
+          this.maskCtx.lineWidth = 0;
+          this.maskCtx.fillStyle = "#FFFFFF";
+          this.maskCtx.beginPath();
+          this.maskCtx.moveTo(Zielpunkte[this.l].x, Zielpunkte[this.l].y);
+          this.maskCtx.lineTo(Zielpunkte[this.l+5].x, Zielpunkte[this.l+5].y);
+          this.maskCtx.lineTo(Zielpunkte[this.l+6].x, Zielpunkte[this.l+6].y);
+          this.maskCtx.closePath();
+          this.maskCtx.stroke();
+          this.maskCtx.fill();
+          let mask=cv.imread(this.maskCanvas);
+          let res = new cv.Mat();
 
-        //zur Segmentierung das Bild in die Maske zeichnen 
-        this.maskCtx.globalCompositeOperation = "source-in";
-        this.maskCtx.drawImage(this.TransformationsCanvas, 0, 0);
-
-        //Segmente einlesen und abspeichern
-        this.Bildausschnitte[this.z2] =cv.imread(this.maskCanvas);
+          cv.threshold(mask, mask, 1, 255, cv.THRESH_BINARY);
+          cv.cvtColor(mask, mask, cv.COLOR_RGBA2GRAY);
+          cv.bitwise_and(dst, dst, res, mask);
+          this.Bildausschnitte[this.z2] =res;
         }
 
-        this.TransformationCtx.clearRect(0,0,this.width, this.height);
         this.maskCtx.clearRect(0, 0, this.width, this.height);
 
         let src1 = cv.imread(this.maskCanvas);
-        let dsrc = new cv.Mat();
+        //  
 
         //Bildausschnitte zum Gesamtbild aufaddieren 
         for(let i=1; i<=32;i++)
         {
-            let src2 = this.Bildausschnitte[i];  
-            cv.add(src1, src2, dsrc);
-            src1 = dsrc;
+            let src2 = this.Bildausschnitte[i];
+            let mask = new cv.Mat();
+            cv.cvtColor(src2, mask, cv.COLOR_RGBA2GRAY, 0);
+            cv.threshold(mask, mask, 1, 255, cv.THRESH_BINARY);
+            cv.bitwise_and(src2, src2, src1, mask);
         }
         //Ergebnisbild ausgeben
-        cv.imshow(this.maskCanvas,dsrc,0,0);
- 
-        //Bilddaten filtern
-        let Bilddaten = new ImageData(this.width, this.height);
-        let gefilterteBilddaten = new ImageData(this.width, this.height);
-        Bilddaten = this.maskCtx.getImageData(0,0,this.width,this.height);
-        gefilterteBilddaten = this.WeißePixelManipulieren(Bilddaten);
+        cv.imshow(this.maskCanvas,src1,0,0);
 
-        this.maskCtx.putImageData(gefilterteBilddaten,0,0);
-        transformiertesBild = cv.imread(this.maskCanvas);
-        
-        return transformiertesBild;
+        return cv.imread(this.maskCanvas);
     }
    
-    WeißePixelManipulieren(pixel)
-    {   var pixeldata = pixel.data;
-        for(let i=0; i<pixeldata.length; i+=4)
-        { 
-            if(pixeldata[i]>254 || pixeldata[i+1]>254 || pixeldata[i+2]>254)
-            {   
-                //Den Pixelwert übernehmen, der zwei oben und eins nach rechts positioniert ist
-                pixeldata[i] = pixeldata[i+4-8*this.width];     // rot
-                pixeldata[i + 1] = pixeldata[i+5-8*this.width]; // grün
-                pixeldata[i + 2] = pixeldata[i+6-8*this.width]; // blau
-                pixeldata[i + 3] = 255; 
-            }
-        }
-        return pixel;
-    }    
-    
-    //Medianfilter hat keine guten Ergebnisse geliefert
-    medianFilter(imageData) 
-    {
-        const data = imageData.data;
-        const width = imageData.width;
-        const height = imageData.height;
-        const result = new ImageData(width, height);
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-            const index = (y * width + x) * 4;
-            const redValues = [];
-            const greenValues = [];
-            const blueValues = [];
-            for (let j = -1; j <= 1; j++) {
-                for (let i = -1; i <= 1; i++) {
-                if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height) {
-                    const neighborIndex = (y + j) * width + x + i;
-                    if (data[neighborIndex * 4] !== 255 || data[neighborIndex * 4 + 1] !== 255 || data[neighborIndex * 4 + 2] !== 255) 
-                    {
-                    redValues.push(data[neighborIndex * 4]);
-                    greenValues.push(data[neighborIndex * 4 + 1]);
-                    blueValues.push(data[neighborIndex * 4 + 2]);
-                    }
-                }
-                }
-            }
-            redValues.sort((a, b) => a - b);
-            greenValues.sort((a, b) => a - b);
-            blueValues.sort((a, b) => a - b);
-            const redMedian = redValues[Math.floor(redValues.length / 2)];
-            const greenMedian = greenValues[Math.floor(greenValues.length / 2)];
-            const blueMedian = blueValues[Math.floor(blueValues.length / 2)];
-            result.data[index] = redMedian;
-            result.data[index + 1] = greenMedian;
-            result.data[index + 2] = blueMedian;
-            result.data[index + 3] = 255;
-            }
-        }
-        return result;
-        }
-
     //Hilfsfunktionen für tiefes Arraykopieren
     deepCopy(arr)
     {

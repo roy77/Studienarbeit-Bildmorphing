@@ -3,7 +3,6 @@ class BildBox
     constructor()
     {
         this.bild = new Image();
-        this.bildMat;
         this.teilverhältnis = 4; //nicht verändern, Code nur bedingt für andere Teilverhältnisse ausgelegt
         this.xz=0;
         this.yz=0;
@@ -26,9 +25,6 @@ class BildBox
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.bild.src = imageSRC;
 
-        //Maße des Canvas initialisieren
-        this.canvas.height= this.bild.height;
-        this.canvas.width= this.bild.width;
 
         //Bild zeichnen
         this.bild.onload = this.bildzeichnen.bind(this);     
@@ -146,7 +142,7 @@ class BildBox
     { 
         let r=0;
         let k=1;
-        for(let i=1; i<25; i++)
+        for(let i=1; i<=25; i++)
         {   
             //Koordinaten im x-, y-Format abgelegt
             Punkte[i].x = angepasstePunkte[r];
@@ -225,14 +221,12 @@ class BildBox
 
     //Bild einzeichnen
     bildzeichnen()
-    { 
+    {
+        this.canvas.height= this.bild.height;
+        this.canvas.width= this.bild.width;
+        
         this.ctx.drawImage(this.bild,0, 0, this.canvas.width, this.canvas.height);
-        //Bildmatrix für die Transformation einlesen
-        this.bildMat = new cv.Mat();
-        this.bildMat = cv.imread(this.canvas);
         this.punktezeichnen(this.Punkte);
         this.gitterzeichnen(); 
-
-        return this.bild;
     }
 }

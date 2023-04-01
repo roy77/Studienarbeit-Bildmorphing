@@ -55,123 +55,108 @@
 <img  src="DHBW_Logo.jpg" alt="DHBW Logo" title="DHBW" width="150" class='top-right' >
 <div>  
     <!--Canvas-Elemente-->  
-    <canvas id="QuellCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Thomas Hennefeld" ></canvas>   
+    <canvas id="QuellCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Thomas Hennefeld"></canvas>   
     <canvas id="ZielCanvas"  style="border:2px solid #000000;" alt='bitte die Seite neuladen' title="Viktor Trott"></canvas> 
-    <canvas id="TransformationsCanvas"  style="border:2px solid #000000;"></canvas>
     <canvas id="maskCanvas"  style="border:2px solid #000000;"></canvas>
     <canvas id="Ausgabecanvas"  style="border:2px solid  #000000; display:none"></canvas>
+</div>
+<div id="meldung" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px; background-color: #1ce30a; border: 1px solid #cccccc; border-radius: 5px; box-shadow: 0 0 5px #999;"></div>
+
+<button type="button1" id="btn1" onclick="MorphingDurchführen()">Morphing</button>
+<input type="range" min="0" max="4" value="0" class="slider" id="slider1">
+<input type="range" min="0" max="7" value="0" class="slider" id="slider2"><span id="sliderValue"></span>
+
+<div>  
     <canvas id="Ergebniscanvas_0"  style="display:none;"></canvas>
     <canvas id="Ergebniscanvas_1"  style="display:none;"></canvas>   
     <canvas id="Ergebniscanvas_2"  style="display:none;"></canvas>
     <canvas id="Ergebniscanvas_3"  style="display:none;"></canvas>   
     <canvas id="Ergebniscanvas_4"  style="display:none;"></canvas>
-    <canvas id="Exportcanvas" ></canvas>
-    <canvas id="Erkennungscanvas" ></canvas>
 </div>
-<div id="meldung" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px; background-color: #1ce30a; border: 1px solid #cccccc; border-radius: 5px; box-shadow: 0 0 5px #999;"></div>
 
-<!--Slider--> 
-<input type="range" min="0" max="4" value="0" class="slider" id="slider1">
-<p>Ergebnisbilder: <span id="sliderValue1"></span></p>
 
-<input type="range" min="0" max="7" value="0" class="slider" id="slider2">
-<p>Zwischenbilder: <span id="sliderValue2"></span></p>
-
-<button type="button1" id="btn1" onclick="MorphingDurchführen()">Morphing</button>
 <!--<button type="button2" id="btn2" onclick="Gesichtserkennung()">Gesichterkennung</button>-->
 <!--<button type="button2" id="btn2" onclick="KoordinatenAbspeichern()">Koordinaten abspeichern</button>-->
 
-<!-- JavaScript-Dateien einbinden-->
-<script src="opencv.js" type="text/javascript"></script> 
 <!--<script src="dlib.js"></script> -->
 <script src="Punkt_Klasse.js"></script>
 <script src="BildBox_Klasse.js"></script>
 <script src="Morphing_Klasse.js"></script>
 <script src="Gesichtserkennung.js"></script>                 
+<script src="opencv.js" id="opencvjs"></script> 
 
 <script>
-    //OpenCV.js laden -> muss erst geladen sein, für andere Operationen
-    loadOpenCV(meldungEinblenden);
-
     //Deklaration
-    var n=3; //Anzahl Zwischennetze
-    var transformierteQuellbilder = [];
-    var transformierteZielbilder = [];
     var Morphs = [];
     var Zwischencanvas = [];
     var Ergebniscanvas = [];
     var Gewichtung = [0.25, 0.5, 0.75]; //Gewichtungsvektor für die Bildüberlagerung
-    var scale = 2; //Skalierungsfaktor für die Transformation und Ausgabe -> geht quadratisch in die Laufzeit ein!
-
-    //Koordinaten sind im x,y-Format gespeichert
-    var QuellStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 68,73, 114,75, 168,75, 233,79.75, 0,159.5, 83,165,
-    120,168, 157,168, 233,159.5, 0,239.25, 85,243, 125,245, 158,241, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319]; 
-    var ZielStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 56,61, 105,67, 154,56, 233,79.75, 0,159.5, 63,147,
-    99,144, 147,144, 233,159.5, 0,239.25, 76,235, 101,237, 131,233, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319];
-
-    var Ausgabecanvas = document.getElementById('Ausgabecanvas');
-    var AusgabeCtx = Ausgabecanvas.getContext('2d');
-
-    var slider1 = document.getElementById("slider1");
-    var output1 = document.getElementById("sliderValue1");
-    output1.innerHTML = slider1.value;
-
-    var slider2 = document.getElementById("slider2");
-    var output2 = document.getElementById("sliderValue2");
-    output2.innerHTML = slider2.value;
-    
-    //Namensdeklaration der Canvas
-    for(let i=0; i<=5; i++)
-    {
-        Ergebniscanvas[i] = "Ergebniscanvas_" + i;
-    }
-
-    //BildBoxen erstellen und initialisieren
+    var Morphing1;
+    var n=3; //Anzahl Zwischennetze
     let BildBox1= new BildBox();
     let BildBox2= new BildBox();
-    //Bilder müssen die gleiche Größe haben
-    BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png', QuellStartKoordinaten);
-    BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png', ZielStartKoordinaten);
+    var transformierteQuellbilder = [];
+    var transformierteZielbilder = [];
+
+    function start()
+    {   
+
+      //Koordinaten sind im x,y-Format gespeichert
+      var QuellStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 68,73, 114,75, 168,75, 233,79.75, 0,159.5, 83,165,
+      120,168, 157,168, 233,159.5, 0,239.25, 85,243, 125,245, 158,241, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319]; 
+      var ZielStartKoordinaten = [0,0, 58.25,0, 116.5,0, 174.75,0, 233,0, 0,79.75, 56,61, 105,67, 154,56, 233,79.75, 0,159.5, 63,147,
+      99,144, 147,144, 233,159.5, 0,239.25, 76,235, 101,237, 131,233, 233,239.25, 0,319, 58.25,319, 116.5,319, 174.75,319, 233,319];
+
+      var Ausgabecanvas = document.getElementById('Ausgabecanvas');
+      var AusgabeCtx = Ausgabecanvas.getContext('2d');
+
+      var slider1 = document.getElementById("slider1");
+      var slider2 = document.getElementById("slider2");
+      var output = document.getElementById("sliderValue");
+      output.innerHTML = "";
+      
+      //Namensdeklaration der Canvas
+      for(let i=0; i<=5; i++)
+      {
+          Ergebniscanvas[i] = "Ergebniscanvas_" + i;
+      }
+
+      //Bilder müssen die gleiche Größe haben
+      BildBox1.init('QuellCanvas','Thomas_1_zugeschnitten.png', QuellStartKoordinaten);
+      BildBox2.init('ZielCanvas','Viktor_1_zugeschnitten.png', ZielStartKoordinaten);
+
+      //Morphing1 erstellen und initialisieren 
+      Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', BildBox1.Punkte, BildBox2.Punkte);
+
+      //Morphing initial starten -> nicht sinnvoll, da lange Laufzeit
+
+      //Uebergabe-Event auffangen und Daten an Morphing1 übergeben
+      addEventListener('Uebergabe', function (e) 
+      {
+          let info=e.detail;
+          Morphing1.uebertragen(info.sender, info.Punkte, info.teilverhältnis);
+      }, false);
+
+      //Slider1 für die Morphs
+      slider1.oninput = function() 
+      {
+          output.innerHTML = "Ergebnisbild: " +this.value; 
+          Ausgabecanvas.style.display = 'inline';
+          cv.imshow(Ausgabecanvas, Morphs[this.value]);            
+      }
+
+      //Slider2 für die Zwischenbilder
+      slider2.oninput = function() 
+      {
+          output.innerHTML = "Zwischenbild: " +this.value; 
+          Ausgabecanvas.style.display = 'inline';
+          if(this.value < 4)
+              cv.imshow(Ausgabecanvas, transformierteQuellbilder[this.value]);
+          if(this.value > 3 && this.value < 8)
+              cv.imshow(Ausgabecanvas, transformierteZielbilder[this.value-4]);     
+      }
+    }
     
-    if(BildBox1.bild.width == BildBox2.bild.width && BildBox1.bild.height == BildBox2.bild.height)
-    {
-        var width = BildBox1.bild.width;
-        var height = BildBox1.bild.height;
-    }
-
-    //Morphing1 erstellen und initialisieren 
-    let Morphing1=(new Morphing()).init('TransformationsCanvas','maskCanvas', width*scale, height*scale, BildBox1.Punkte, BildBox2.Punkte);
-
-    //Morphing initial starten -> nicht sinnvoll, da lange Laufzeit
-
-    //Uebergabe-Event auffangen und Daten an Morphing1 übergeben
-    addEventListener('Uebergabe', function (e) 
-    {
-        let info=e.detail;
-        Morphing1.uebertragen(info.sender, info.Punkte, info.teilverhältnis);
-    }, false);
-
-    //Slider1 für die Morphs
-    slider1.oninput = function() 
-    {
-        output1.innerHTML = this.value; 
-        Ausgabecanvas.style.display = 'inline';
-        AusgabeCtx.clearRect(0,0,width*scale,height*scale);
-        cv.imshow(Ausgabecanvas, Morphs[output1.innerHTML]);            
-    }
-
-    //Slider2 für die Zwischenbilder
-    slider2.oninput = function() 
-    {
-        output2.innerHTML = this.value; 
-        Ausgabecanvas.style.display = 'inline';
-        AusgabeCtx.clearRect(0,0,width*scale,height*scale);
-        if(output2.innerHTML < 4)
-            cv.imshow(Ausgabecanvas, transformierteQuellbilder[output2.innerHTML]);
-        if(output2.innerHTML > 3 && output2.innerHTML < 8)
-            cv.imshow(Ausgabecanvas, transformierteZielbilder[output2.innerHTML-4]);     
-    }
-
     //Funktionen
     //Durchführung des Morphing
     function MorphingDurchführen()
@@ -179,36 +164,25 @@
         //Netzinterpolation
         var Zwischenpunkte = Morphing1.NetzInterpolation(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM, n);
 
-        //Netze skalieren
-        Morphing1.QuellpunkteM = NetzeSkalieren(Morphing1.QuellpunkteM, scale);
-        Morphing1.ZielpunkteM = NetzeSkalieren(Morphing1.ZielpunkteM, scale);
-        for(let i=0; i<3;i++)
-        {
-            Zwischenpunkte[i] = NetzeSkalieren(Zwischenpunkte[i], scale);
-        }
-
         //Bilder skalieren
-        BildBox1.bildMat = BilderSkalieren(BildBox1.bild, scale);
-        BildBox2.bildMat = BilderSkalieren(BildBox2.bild, scale);
+        let bildMat1 = cv.imread(BildBox1.bild);
+        let bildMat2 = cv.imread(BildBox2.bild);
 
         //Transformationen
-        //Beim ersten Morphing darf nicht der Canvas sondern muss das Bild eingelesen werden, sonst wird das Netz miteingelesen 
-        //Bei den folgenden ist es egal
-        //Quellbild -> Zielbild
-        transformierteQuellbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[0], BildBox1.bildMat);
-        transformierteQuellbilder[1] = Morphing1.transformiereAusschnitte(Zwischenpunkte[0], Zwischenpunkte[1], transformierteQuellbilder[0]);
-        transformierteQuellbilder[2] = Morphing1.transformiereAusschnitte(Zwischenpunkte[1], Zwischenpunkte[2], transformierteQuellbilder[1]);
-        transformierteQuellbilder[3] = Morphing1.transformiereAusschnitte(Zwischenpunkte[2], Morphing1.ZielpunkteM, transformierteQuellbilder[2]);
+        transformierteQuellbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[0], bildMat1);
+        transformierteQuellbilder[1] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[1], bildMat1);
+        transformierteQuellbilder[2] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Zwischenpunkte[2], bildMat1);
+        transformierteQuellbilder[3] = Morphing1.transformiereAusschnitte(Morphing1.QuellpunkteM, Morphing1.ZielpunkteM,bildMat1);
 
         //Zielbild -> Quellbild 
-        transformierteZielbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[2], BildBox2.bildMat);
-        transformierteZielbilder[1] = Morphing1.transformiereAusschnitte(Zwischenpunkte[2], Zwischenpunkte[1], transformierteZielbilder[0]);
-        transformierteZielbilder[2] = Morphing1.transformiereAusschnitte(Zwischenpunkte[1], Zwischenpunkte[0], transformierteZielbilder[1]);
-        transformierteZielbilder[3] = Morphing1.transformiereAusschnitte(Zwischenpunkte[0], Morphing1.QuellpunkteM, transformierteZielbilder[2]);
+        transformierteZielbilder[0] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[2], bildMat2);
+        transformierteZielbilder[1] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[1], bildMat2);
+        transformierteZielbilder[2] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Zwischenpunkte[0], bildMat2);
+        transformierteZielbilder[3] = Morphing1.transformiereAusschnitte(Morphing1.ZielpunkteM, Morphing1.QuellpunkteM, bildMat2);
 
         //Addition der Zwischenbilder
         Morphs[0] = new cv.Mat(); 
-        cv.addWeighted(BildBox1.bildMat, 1, transformierteZielbilder[3], 0, 0, Morphs[0]); 
+        cv.addWeighted(bildMat1, 1, transformierteZielbilder[3], 0, 0, Morphs[0]); 
         cv.imshow(Ergebniscanvas[0],Morphs[0]);
 
         let j=3;
@@ -221,42 +195,14 @@
         }
  
         Morphs[4] = new cv.Mat();
-        cv.addWeighted(transformierteQuellbilder[3], 0, BildBox2.bildMat, 1, 0, Morphs[4]);
+        cv.addWeighted(transformierteQuellbilder[3], 0, bildMat2, 1, 0, Morphs[4]);
         cv.imshow(Ergebniscanvas[4],Morphs[4]);
-
-        //Bilddatei zur weiteren Untersuchung exportieren
-        //cv.imshow(Exportcanvas,transformierteQuellbilder[0])
-        //const link = document.createElement('a');
-        //link.download = 'image.png';
-        //link.href = Exportcanvas.toDataURL('image/png');
-        //link.click();
 
         Ausgabecanvas.style.display = 'inline';
         cv.imshow(Ausgabecanvas, Morphs[2]);
 
         //Meldetext, sobald Morphing abgeschlossen, da bei großen Skalierungsfaktor lange Laufzeit
         meldungEinblenden("Morphing erfolgreich durchgeführt!", 1500);
-    }
- 
-    function NetzeSkalieren(Netz, scale)
-    {    
-        var skaliertesNetz = deepCopy(Netz); 
-
-        for(let i=1; i<=25; i++)
-        {   
-            skaliertesNetz[i].x = (Netz[i].x * scale);
-            skaliertesNetz[i].y = (Netz[i].y * scale);
-        }
-        return skaliertesNetz;
-    }
-
-    function BilderSkalieren(image, scale)
-    {   let src = cv.imread(image);
-        let resized = new cv.Mat();
-        let dsize = new cv.Size(src.cols*scale, src.rows*scale);
-        cv.resize(src, resized, dsize, 0, 0, cv.INTER_AREA);
-
-        return resized;
     }
 
     //Meldung einblenden, Zeit: Anzeigedauer
@@ -269,23 +215,6 @@
         setTimeout(function() {
             meldungsElement.style.display = "none";
         }, zeit);
-    }
-
-    //Zum Testen der Netzinterpolation
-    function PunkteZeichnen(canvasID, Punkte)
-    {
-        let canvas = document.getElementById(canvasID);
-        let ctx = canvas.getContext('2d');
-        canvas.width = width;
-        canvas.height = height;
-
-        for(let i=1; i<=25; i++)
-        {
-            ctx.beginPath();
-            ctx.arc(Punkte[i].x, Punkte[i].y, Punkte[i].radius, 0, 2 * Math.PI);
-            ctx.fillStyle = Punkte[i].farbe;
-            ctx.fill();
-        }
     }
 
     //Hilfsfunktion für tiefes Arraykopieren
@@ -330,23 +259,12 @@
         let ZielStartKoordinaten = deepCopy(BildBox2.Punkte);
     }
 
-    //OpenCV laden
-    function loadOpenCV(callback) 
-    {
-        // Überprüfen, ob OpenCV bereits geladen wurde
-        if (typeof cv !== 'undefined') {
-            // Wenn ja, Rückruffunktion aufrufen
-            callback("OpenCV erfolgreich geladen!", 1500);
-        } else {
-            // Wenn nicht, OpenCV laden
-            let script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.async = true;
-            script.onload = callback;
-            script.src = 'opencv.js';
-            document.head.appendChild(script);
-        } 
-    }
+    //waitOpenCV()
+    cv['onRuntimeInitialized']=()=>{
+      meldungEinblenden("OpenCV erfolgreich geladen!", 1500);    
+      start();
+    };
+    
 </script>       
 </body>
 </html>
